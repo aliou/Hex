@@ -7,6 +7,7 @@
   "type": "module",
   "scripts": {
     "release": "cd tools && bun run build",
+    "install:local": "bash scripts/install-local.sh",
     "changeset": "changeset",
     "changeset:add": "changeset",
     "changeset:add-ai": "bun run tools/scripts/add-changeset.ts",
