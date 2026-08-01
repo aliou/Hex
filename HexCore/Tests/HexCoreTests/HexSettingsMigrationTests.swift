@@ -36,6 +36,20 @@ final class HexSettingsMigrationTests: XCTestCase {
 		XCTAssertEqual(decoded, settings)
 	}
 
+	func testMissingPasteLastTranscriptHotkeyUsesDefault() throws {
+		let decoded = try JSONDecoder().decode(HexSettings.self, from: Data("{}".utf8))
+
+		XCTAssertEqual(decoded.pasteLastTranscriptHotkey, HexSettings.defaultPasteLastTranscriptHotkey)
+	}
+
+	func testClearedPasteLastTranscriptHotkeyPersists() throws {
+		let settings = HexSettings(pasteLastTranscriptHotkey: nil)
+		let data = try JSONEncoder().encode(settings)
+		let decoded = try JSONDecoder().decode(HexSettings.self, from: data)
+
+		XCTAssertNil(decoded.pasteLastTranscriptHotkey)
+	}
+
 	func testNewSettingsEnableSuperFastModeByDefault() {
 		XCTAssertTrue(HexSettings().superFastModeEnabled)
 	}
