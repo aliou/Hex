@@ -474,6 +474,7 @@
 				CURRENT_PROJECT_VERSION = 91;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Hex/Preview Content\"";
+				DEVELOPMENT_TEAM = LWXXS9G4S5;
 				EMIT_FRONTEND_COMMAND_LINES = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -529,6 +530,7 @@
 				CURRENT_PROJECT_VERSION = 91;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Hex/Preview Content\"";
+				DEVELOPMENT_TEAM = LWXXS9G4S5;
 				EMIT_FRONTEND_COMMAND_LINES = NO;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -636,6 +638,8 @@
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.26.0;
 			};
+			traits = (
+			);
 		};
 		47E05E032D444EF800D26DA6 /* XCRemoteSwiftPackageReference "Sauce" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -668,6 +672,8 @@
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.9.1;
 			};
+			traits = (
+			);
 		};
 		4F0D6A0A2F1A000100000001 /* XCRemoteSwiftPackageReference "swift-case-paths" */ = {
 			isa = XCRemoteSwiftPackageReference;

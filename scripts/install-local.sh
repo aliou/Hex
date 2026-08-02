@@ -6,15 +6,13 @@ DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-${TMPDIR:-/tmp}/Hex-local-build}"
 INSTALL_DIR="${INSTALL_DIR:-/Applications}"
 APP="$DERIVED_DATA_PATH/Build/Products/Release/Hex.app"
 TARGET="$INSTALL_DIR/Hex.app"
-ENTITLEMENTS="$(mktemp "${TMPDIR:-/tmp}/Hex-entitlements.XXXXXX")"
-
-cleanup() {
-  rm -f "$ENTITLEMENTS"
-}
-trap cleanup EXIT
 
 cd "$ROOT"
 
+# Build with the project's DEVELOPMENT_TEAM and automatic signing so the app
+# gets a stable, team-anchored code signature. A stable signature keeps TCC
+# grants (Accessibility, Input Monitoring, Microphone) valid across reinstalls,
+# unlike ad-hoc signing whose cdhash changes on every build.
 xcodebuild \
   -project Hex.xcodeproj \
   -scheme Hex \
@@ -22,17 +20,8 @@ xcodebuild \
   -destination 'platform=macOS,arch=arm64' \
   -derivedDataPath "$DERIVED_DATA_PATH" \
   -skipMacroValidation \
-  CODE_SIGNING_ALLOWED=NO \
-  CODE_SIGNING_REQUIRED=NO \
   build
 
-BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist")"
-cp Hex/Hex.entitlements "$ENTITLEMENTS"
-/usr/libexec/PlistBuddy -c "Set :com.apple.security.temporary-exception.mach-lookup.global-name:0 $BUNDLE_ID-spks" "$ENTITLEMENTS"
-/usr/libexec/PlistBuddy -c "Set :com.apple.security.temporary-exception.mach-lookup.global-name:1 $BUNDLE_ID-spki" "$ENTITLEMENTS"
-
-# Ad-hoc signing keeps this local build independent from any Apple Developer team.
-codesign --force --deep --sign - --entitlements "$ENTITLEMENTS" "$APP"
 codesign --verify --deep --strict --verbose=2 "$APP"
 
 # Quit the running copy before replacement so `open` starts this build rather
