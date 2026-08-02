@@ -8,15 +8,10 @@ updates/
 *.xcworkspace/xcuserdata/
 *.xcuserstate
 buildServer.json
-bin
-scripts
-tools
 ExportOptions.plist
 HexCore/.build
-HexCore/.swiftpm/xcode/xcuserdata/kit.xcuserdatad/xcschemes
+HexCore/.swiftpm/
 FluidAudio/
-node_modules/
-.npm-cache/
 .tmp/
 
 # Claude
