@@ -2,7 +2,7 @@ import os.log
 
 /// Shared helper for creating consistent os.Logger instances across the Hex app and HexCore.
 public enum HexLog {
-  public static let subsystem = "com.kitlangton.Hex"
+  public static let subsystem = "me.aliou.Hex"
 
   public enum Category: String {
     case app = "App"
@@ -19,6 +19,7 @@ public enum HexLog {
     case history = "History"
     case settings = "Settings"
     case permissions = "Permissions"
+    case cleanup = "Cleanup"
   }
 
   public static func logger(_ category: Category) -> os.Logger {
@@ -39,4 +40,5 @@ public enum HexLog {
   public static let history = logger(.history)
   public static let settings = logger(.settings)
   public static let permissions = logger(.permissions)
+  public static let cleanup = logger(.cleanup)
 }

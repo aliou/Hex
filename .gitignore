@@ -8,16 +8,19 @@ updates/
 *.xcworkspace/xcuserdata/
 *.xcuserstate
 buildServer.json
-bin
-scripts
-tools
 ExportOptions.plist
 HexCore/.build
-HexCore/.swiftpm/xcode/xcuserdata/kit.xcuserdatad/xcschemes
+HexCore/.swiftpm/
 FluidAudio/
-node_modules/
-.npm-cache/
 .tmp/
+.derived-data/
+
+# Local eval fixtures can contain private audio and transcripts.
+Tools/HexEvals/.build/
+Tools/HexEvals/.derived-data/
+Tools/HexEvals/.swiftpm/
+Tools/HexEvals/Fixtures/*
+!Tools/HexEvals/Fixtures/README.md
 
 # Claude
 .claude/

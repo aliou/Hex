@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Support multiple recording hotkeys active at the same time (e.g. fn on the laptop keyboard and F13 on a macropad). Add or remove hotkeys in Settings → Hot Key; each hotkey can be tapped to re-record it.
+
 ## 0.8.4
 
 ### Patch Changes

@@ -226,12 +226,32 @@ struct TranscriptView: View {
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: 0) {
-			Text(transcript.text)
-				.font(.body)
-				.lineLimit(nil)
-				.fixedSize(horizontal: false, vertical: true)
-				.padding(.trailing, 40) // Space for buttons
-				.padding(12)
+			VStack(alignment: .leading, spacing: 10) {
+				Text(transcript.text)
+					.font(.body)
+					.lineLimit(nil)
+					.fixedSize(horizontal: false, vertical: true)
+
+				if let originalText = transcript.originalText,
+				   !originalText.isEmpty,
+				   originalText != transcript.text
+				{
+					VStack(alignment: .leading, spacing: 4) {
+						Text("Original")
+							.font(.caption.weight(.medium))
+							.foregroundStyle(.secondary)
+						Text(originalText)
+							.font(.caption)
+							.foregroundStyle(.secondary)
+							.lineLimit(nil)
+							.fixedSize(horizontal: false, vertical: true)
+					}
+					.padding(8)
+					.background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+				}
+			}
+			.padding(.trailing, 40) // Space for buttons
+			.padding(12)
 
 			Divider()
 

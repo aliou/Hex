@@ -9,36 +9,33 @@ struct HotKeySectionView: View {
 
     var body: some View {
         Section("Hot Key") {
-            let hotKey = store.hexSettings.hotkey
-            let key = store.isSettingHotKey ? nil : hotKey.key
-            let modifiers = store.isSettingHotKey ? store.currentModifiers : hotKey.modifiers
-
             VStack(spacing: 12) {
-                // Hot key view
-                HStack {
-                    Spacer()
-                    HotKeyView(modifiers: modifiers, key: key, isActive: store.isSettingHotKey)
-                        .animation(.spring(), value: key)
-                        .animation(.spring(), value: modifiers)
-                    Spacer()
-                }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    store.send(.startSettingHotKey)
+                ForEach(Array(store.hexSettings.hotkeys.enumerated()), id: \.offset) { index, hotKey in
+                    hotKeyRow(index: index, hotKey: hotKey)
                 }
 
-                if !store.isSettingHotKey,
-                   hotKey.key == nil,
-                   !hotKey.modifiers.isEmpty {
-                    ModifierSideControls(
-                        modifiers: hotKey.modifiers,
-                        onSelect: { kind, side in
-                            store.send(.setModifierSide(kind, side))
-                        }
-                    )
-                    .transition(.opacity)
+                if store.isAddingHotKey {
+                    HStack(spacing: 8) {
+                        HotKeyView(modifiers: store.currentModifiers, key: nil, isActive: true)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                store.send(.cancelSettingHotKey)
+                            }
+                    }
+                } else if !store.isSettingHotKey {
+                    Button {
+                        store.send(.addHotKey)
+                    } label: {
+                        Label("Add Hot Key", systemImage: "plus")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
                 }
             }
+
+            let hasKeyBasedHotKey = store.hexSettings.hotkeys.contains { $0.key != nil }
+            let hasModifierOnlyHotKey = store.hexSettings.hotkeys.contains { $0.key == nil && !$0.modifiers.isEmpty }
 
             Label {
                 Toggle(
@@ -53,7 +50,7 @@ struct HotKeySectionView: View {
             }
 
             // Double-tap only mode applies to key+modifier combinations.
-            if hotKey.key != nil {
+            if hasKeyBasedHotKey {
                 Label {
                     Toggle(
                         "Use double-tap only",
@@ -69,7 +66,7 @@ struct HotKeySectionView: View {
             }
 
             // Minimum key time (for modifier-only shortcuts)
-            if store.hexSettings.hotkey.key == nil {
+            if hasModifierOnlyHotKey {
                 Label {
                     Slider(
                         value: Binding(
@@ -87,6 +84,48 @@ struct HotKeySectionView: View {
             }
         }
         .enableInjection()
+    }
+
+    @ViewBuilder
+    private func hotKeyRow(index: Int, hotKey: HotKey) -> some View {
+        let isCapturingThis = store.isSettingHotKey && !store.isAddingHotKey && store.settingHotKeyIndex == index
+        let key = isCapturingThis ? nil : hotKey.key
+        let modifiers = isCapturingThis ? store.currentModifiers : hotKey.modifiers
+
+        VStack(spacing: 12) {
+            HStack(spacing: 8) {
+                HotKeyView(modifiers: modifiers, key: key, isActive: isCapturingThis)
+                    .animation(.spring(), value: key)
+                    .animation(.spring(), value: modifiers)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        store.send(.startSettingHotKey(index: index))
+                    }
+
+                if store.hexSettings.hotkeys.count > 1, !isCapturingThis {
+                    Button(role: .destructive) {
+                        store.send(.removeHotKey(index))
+                    } label: {
+                        Image(systemName: "minus.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Remove hot key")
+                }
+            }
+
+            if !store.isSettingHotKey,
+               hotKey.key == nil,
+               !hotKey.modifiers.isEmpty {
+                ModifierSideControls(
+                    modifiers: hotKey.modifiers,
+                    onSelect: { kind, side in
+                        store.send(.setModifierSide(index: index, kind: kind, side: side))
+                    }
+                )
+                .transition(.opacity)
+            }
+        }
     }
 }
 

@@ -7,6 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		47512ABF2E14D8C9000E25BA /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 47512ABE2E14D8C9000E25BA /* WhisperKit */; };
+		476316272E5FB31400913CDE /* HexCore in Frameworks */ = {isa = PBXBuildFile; productRef = 476316262E5FB31400913CDE /* HexCore */; };
+		4765045E2D45900200C7EA60 /* Pow in Frameworks */ = {isa = PBXBuildFile; productRef = 4765045D2D45900200C7EA60 /* Pow */; };
+		47C08AB62DE9F61B00564AE6 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 47C08AB52DE9F61B00564AE6 /* Inject */; };
+		47E05E022D444EE900D26DA6 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 47E05E012D444EE900D26DA6 /* ComposableArchitecture */; };
+		47E05E052D444EF800D26DA6 /* Sauce in Frameworks */ = {isa = PBXBuildFile; productRef = 47E05E042D444EF800D26DA6 /* Sauce */; };
+		47E05E0A2D44525B00D26DA6 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = 47E05E092D44525B00D26DA6 /* Dependencies */; };
+		47E05E0C2D44525B00D26DA6 /* DependenciesMacros in Frameworks */ = {isa = PBXBuildFile; productRef = 47E05E0B2D44525B00D26DA6 /* DependenciesMacros */; };
+		47E16A622EC6C9D300885CF7 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 47E16A612EC6C9D300885CF7 /* FluidAudio */; };
+		B60C10012F3A000100000001 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = B60C10002F3A000100000001 /* MLX */; };
+		B60C10022F3A000100000001 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = B60C10032F3A000100000001 /* MLXLLM */; };
+		B60C10042F3A000100000001 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = B60C10052F3A000100000001 /* MLXLMCommon */; };
+		B60C10062F3A000100000001 /* MLXHuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = B60C10072F3A000100000001 /* MLXHuggingFace */; };
+		B60C10082F3A000100000001 /* HuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = B60C10092F3A000100000001 /* HuggingFace */; };
+		B60C100A2F3A000100000001 /* Tokenizers in Frameworks */ = {isa = PBXBuildFile; productRef = B60C100B2F3A000100000001 /* Tokenizers */; };
 		4F0D6A012F1A000100000001 /* HexCore in Frameworks */ = {isa = PBXBuildFile; productRef = 476316262E5FB31400913CDE /* HexCore */; };
 		4F0D6A022F1A000100000001 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 47E05E012D444EE900D26DA6 /* ComposableArchitecture */; };
 		4F0D6A042F1A000100000001 /* Sharing in Frameworks */ = {isa = PBXBuildFile; productRef = 4F0D6A072F1A000100000001 /* Sharing */; };
@@ -16,16 +31,6 @@
 		4F0D6A0E2F1A000100000001 /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = 4F0D6A0C2F1A000100000001 /* CasePaths */; };
 		4F0D6A0F2F1A000100000001 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = 47E05E092D44525B00D26DA6 /* Dependencies */; };
 		4F0D6A102F1A000100000001 /* IdentifiedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 4F0D6A0D2F1A000100000001 /* IdentifiedCollections */; };
-		47512ABF2E14D8C9000E25BA /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 47512ABE2E14D8C9000E25BA /* WhisperKit */; };
-		476316272E5FB31400913CDE /* HexCore in Frameworks */ = {isa = PBXBuildFile; productRef = 476316262E5FB31400913CDE /* HexCore */; };
-		4765045E2D45900200C7EA60 /* Pow in Frameworks */ = {isa = PBXBuildFile; productRef = 4765045D2D45900200C7EA60 /* Pow */; };
-		476BAD3E2D47E7880088C61F /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 476BAD3D2D47E7880088C61F /* Sparkle */; };
-		47C08AB62DE9F61B00564AE6 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 47C08AB52DE9F61B00564AE6 /* Inject */; };
-		47E05E022D444EE900D26DA6 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 47E05E012D444EE900D26DA6 /* ComposableArchitecture */; };
-		47E05E052D444EF800D26DA6 /* Sauce in Frameworks */ = {isa = PBXBuildFile; productRef = 47E05E042D444EF800D26DA6 /* Sauce */; };
-		47E05E0A2D44525B00D26DA6 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = 47E05E092D44525B00D26DA6 /* Dependencies */; };
-		47E05E0C2D44525B00D26DA6 /* DependenciesMacros in Frameworks */ = {isa = PBXBuildFile; productRef = 47E05E0B2D44525B00D26DA6 /* DependenciesMacros */; };
-		47E16A622EC6C9D300885CF7 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 47E16A612EC6C9D300885CF7 /* FluidAudio */; };
 		B5045C972D78DED500D0A119 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = B5045C962D78DED500D0A119 /* MarkdownUI */; };
 		B53356002D7B8D4900E5F542 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B53355FF2D7B8D4900E5F542 /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
@@ -60,17 +65,17 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4F0D6A032F1A000100000001 /* HexTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = HexTests;
-			sourceTree = "<group>";
-		};
 		47E05DF02D444EC600D26DA6 /* Hex */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				476BAD402D47E8500088C61F /* Exceptions for "Hex" folder in "Hex" target */,
 			);
 			path = Hex;
+			sourceTree = "<group>";
+		};
+		4F0D6A032F1A000100000001 /* HexTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = HexTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -93,13 +98,18 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				476BAD3E2D47E7880088C61F /* Sparkle in Frameworks */,
 				476316272E5FB31400913CDE /* HexCore in Frameworks */,
 				47E05E0A2D44525B00D26DA6 /* Dependencies in Frameworks */,
 				B5045C972D78DED500D0A119 /* MarkdownUI in Frameworks */,
 				47512ABF2E14D8C9000E25BA /* WhisperKit in Frameworks */,
 				47E05E052D444EF800D26DA6 /* Sauce in Frameworks */,
 				47E16A622EC6C9D300885CF7 /* FluidAudio in Frameworks */,
+				B60C10012F3A000100000001 /* MLX in Frameworks */,
+				B60C10022F3A000100000001 /* MLXLLM in Frameworks */,
+				B60C10042F3A000100000001 /* MLXLMCommon in Frameworks */,
+				B60C10062F3A000100000001 /* MLXHuggingFace in Frameworks */,
+				B60C10082F3A000100000001 /* HuggingFace in Frameworks */,
+				B60C100A2F3A000100000001 /* Tokenizers in Frameworks */,
 				47C08AB62DE9F61B00564AE6 /* Inject in Frameworks */,
 				4765045E2D45900200C7EA60 /* Pow in Frameworks */,
 				47E05E0C2D44525B00D26DA6 /* DependenciesMacros in Frameworks */,
@@ -197,7 +207,6 @@
 				47E05E092D44525B00D26DA6 /* Dependencies */,
 				47E05E0B2D44525B00D26DA6 /* DependenciesMacros */,
 				4765045D2D45900200C7EA60 /* Pow */,
-				476BAD3D2D47E7880088C61F /* Sparkle */,
 				B5045C962D78DED500D0A119 /* MarkdownUI */,
 				47C08AB52DE9F61B00564AE6 /* Inject */,
 				47512ABE2E14D8C9000E25BA /* WhisperKit */,
@@ -206,6 +215,12 @@
 				4F0D6A072F1A000100000001 /* Sharing */,
 				4F0D6A0C2F1A000100000001 /* CasePaths */,
 				4F0D6A0D2F1A000100000001 /* IdentifiedCollections */,
+				B60C10002F3A000100000001 /* MLX */,
+				B60C10032F3A000100000001 /* MLXLLM */,
+				B60C10052F3A000100000001 /* MLXLMCommon */,
+				B60C10072F3A000100000001 /* MLXHuggingFace */,
+				B60C10092F3A000100000001 /* HuggingFace */,
+				B60C100B2F3A000100000001 /* Tokenizers */,
 			);
 			productName = Hex;
 			productReference = 47E05DEE2D444EC600D26DA6 /* Hex Debug.app */;
@@ -244,7 +259,6 @@
 				47E05E032D444EF800D26DA6 /* XCRemoteSwiftPackageReference "Sauce" */,
 				47E05E082D44525B00D26DA6 /* XCRemoteSwiftPackageReference "swift-dependencies" */,
 				4765045C2D45900200C7EA60 /* XCRemoteSwiftPackageReference "Pow" */,
-				476BAD3C2D47E7880088C61F /* XCRemoteSwiftPackageReference "Sparkle" */,
 				B5045C952D78DED500D0A119 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 				47C08AB42DE9F61B00564AE6 /* XCRemoteSwiftPackageReference "Inject" */,
 				47512ABD2E14D8C9000E25BA /* XCRemoteSwiftPackageReference "WhisperKit" */,
@@ -253,6 +267,10 @@
 				4F0D6A062F1A000100000001 /* XCRemoteSwiftPackageReference "swift-sharing" */,
 				4F0D6A0A2F1A000100000001 /* XCRemoteSwiftPackageReference "swift-case-paths" */,
 				4F0D6A0B2F1A000100000001 /* XCRemoteSwiftPackageReference "swift-identified-collections" */,
+				B60C100C2F3A000100000001 /* XCRemoteSwiftPackageReference "mlx-swift" */,
+				B60C100D2F3A000100000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
+				B60C100E2F3A000100000001 /* XCRemoteSwiftPackageReference "swift-huggingface" */,
+				B60C100F2F3A000100000001 /* XCRemoteSwiftPackageReference "swift-transformers" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 47E05DEF2D444EC600D26DA6 /* Products */;
@@ -318,7 +336,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 0.8.4;
-				PRODUCT_BUNDLE_IDENTIFIER = com.kitlangton.HexTests;
+				PRODUCT_BUNDLE_IDENTIFIER = me.aliou.HexTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -335,7 +353,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 0.8.4;
-				PRODUCT_BUNDLE_IDENTIFIER = com.kitlangton.HexTests;
+				PRODUCT_BUNDLE_IDENTIFIER = me.aliou.HexTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -379,7 +397,6 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = QC99C9JE59;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -445,7 +462,6 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = QC99C9JE59;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -470,8 +486,8 @@
 		47E05DFE2D444EC700D26DA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				AUTOMATION_APPLE_EVENTS = YES;
 				CODE_SIGN_ENTITLEMENTS = Hex/Hex.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
@@ -480,7 +496,7 @@
 				CURRENT_PROJECT_VERSION = 91;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Hex/Preview Content\"";
-				DEVELOPMENT_TEAM = QC99C9JE59;
+				DEVELOPMENT_TEAM = LWXXS9G4S5;
 				EMIT_FRONTEND_COMMAND_LINES = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -509,7 +525,7 @@
 					"-Xlinker",
 					"-interposable",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.kitlangton.Hex.debug;
+				PRODUCT_BUNDLE_IDENTIFIER = me.aliou.Hex.debug;
 				PRODUCT_MODULE_NAME = Hex;
 				PRODUCT_NAME = "Hex Debug";
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
@@ -526,8 +542,8 @@
 		47E05DFF2D444EC700D26DA6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				AUTOMATION_APPLE_EVENTS = YES;
 				CODE_SIGN_ENTITLEMENTS = Hex/Hex.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
@@ -536,7 +552,7 @@
 				CURRENT_PROJECT_VERSION = 91;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Hex/Preview Content\"";
-				DEVELOPMENT_TEAM = QC99C9JE59;
+				DEVELOPMENT_TEAM = LWXXS9G4S5;
 				EMIT_FRONTEND_COMMAND_LINES = NO;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -560,7 +576,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 0.8.4;
-				PRODUCT_BUNDLE_IDENTIFIER = com.kitlangton.Hex;
+				PRODUCT_BUNDLE_IDENTIFIER = me.aliou.Hex;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
 				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
@@ -629,14 +645,6 @@
 				revision = 1b4b1dda28c50b95f0872927ee2226fe8b58950e;
 			};
 		};
-		476BAD3C2D47E7880088C61F /* XCRemoteSwiftPackageReference "Sparkle" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/sparkle-project/Sparkle";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.9.4;
-			};
-		};
 		47C08AB42DE9F61B00564AE6 /* XCRemoteSwiftPackageReference "Inject" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/krzysztofzablocki/Inject";
@@ -652,6 +660,8 @@
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.26.0;
 			};
+			traits = (
+			);
 		};
 		47E05E032D444EF800D26DA6 /* XCRemoteSwiftPackageReference "Sauce" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -684,6 +694,8 @@
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.9.1;
 			};
+			traits = (
+			);
 		};
 		4F0D6A0A2F1A000100000001 /* XCRemoteSwiftPackageReference "swift-case-paths" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -709,6 +721,38 @@
 				minimumVersion = 2.4.1;
 			};
 		};
+		B60C100C2F3A000100000001 /* XCRemoteSwiftPackageReference "mlx-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift";
+			requirement = {
+				kind = exactVersion;
+				version = 0.31.4;
+			};
+		};
+		B60C100D2F3A000100000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift-lm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.31.3;
+			};
+		};
+		B60C100E2F3A000100000001 /* XCRemoteSwiftPackageReference "swift-huggingface" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/huggingface/swift-huggingface";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.0;
+			};
+		};
+		B60C100F2F3A000100000001 /* XCRemoteSwiftPackageReference "swift-transformers" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/huggingface/swift-transformers";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.2;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -725,11 +769,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4765045C2D45900200C7EA60 /* XCRemoteSwiftPackageReference "Pow" */;
 			productName = Pow;
-		};
-		476BAD3D2D47E7880088C61F /* Sparkle */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 476BAD3C2D47E7880088C61F /* XCRemoteSwiftPackageReference "Sparkle" */;
-			productName = Sparkle;
 		};
 		47C08AB52DE9F61B00564AE6 /* Inject */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -780,6 +819,36 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B5045C952D78DED500D0A119 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
 			productName = MarkdownUI;
+		};
+		B60C10002F3A000100000001 /* MLX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B60C100C2F3A000100000001 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLX;
+		};
+		B60C10032F3A000100000001 /* MLXLLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B60C100D2F3A000100000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLLM;
+		};
+		B60C10052F3A000100000001 /* MLXLMCommon */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B60C100D2F3A000100000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLMCommon;
+		};
+		B60C10072F3A000100000001 /* MLXHuggingFace */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B60C100D2F3A000100000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXHuggingFace;
+		};
+		B60C10092F3A000100000001 /* HuggingFace */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B60C100E2F3A000100000001 /* XCRemoteSwiftPackageReference "swift-huggingface" */;
+			productName = HuggingFace;
+		};
+		B60C100B2F3A000100000001 /* Tokenizers */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B60C100F2F3A000100000001 /* XCRemoteSwiftPackageReference "swift-transformers" */;
+			productName = Tokenizers;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

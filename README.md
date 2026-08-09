@@ -1,42 +1,44 @@
-# Hex — Voice → Text
+# Hex — Voice → Text (personal fork)
 
-Press-and-hold a hotkey to transcribe your voice and paste the result wherever you're typing.
+Personal fork of [kitlangton/Hex](https://github.com/kitlangton/Hex). On-device voice-to-text for Apple Silicon Macs: press-and-hold a hotkey to transcribe and paste the result into whatever you're typing.
 
-**[Download Hex for macOS](https://hex-updates.s3.us-east-1.amazonaws.com/hex-latest.dmg)**
+Built and installed from source:
 
-> **Note:** Hex is currently only available for **Apple Silicon** Macs.
-
-Or download via homebrew:
 ```bash
-brew install --cask kitlangton-hex
+bash scripts/install-local.sh
 ```
 
-I've opened-sourced the project in the hopes that others will find it useful! Hex supports both [Parakeet TDT v3](https://github.com/FluidInference/FluidAudio) via the awesome [FluidAudio](https://github.com/FluidInference/FluidAudio) (the default—it's frickin' unbelievable: fast, multilingual, and cloud-optimized) and the awesome [WhisperKit](https://github.com/argmaxinc/WhisperKit) for on-device transcription. We use the incredible [Swift Composable Architecture](https://github.com/pointfreeco/swift-composable-architecture) for structuring the app. Please open issues with any questions or feedback! ❤️
+That builds a Release `.app`, ad-hoc signs it, quits any running copy, and installs it into `/Applications`.
 
-## Instructions
+## How it works
 
-Once you open Hex, you'll need to grant it microphone and accessibility permissions—so it can record your voice and paste the transcribed text into any application, respectively.
+Hex supports two transcription engines:
 
-Once you've configured a global hotkey, there are **two recording modes**:
+- **Parakeet TDT v3** (default) via [FluidAudio](https://github.com/FluidInference/FluidAudio) — fast and multilingual.
+- **Whisper** via [WhisperKit](https://github.com/argmaxinc/WhisperKit).
 
-1. **Press-and-hold** the hotkey to begin recording, say whatever you want, and then release the hotkey to start the transcription process. 
-2. **Double-tap** the hotkey to *lock recording*, say whatever you want, and then **tap** the hotkey once more to start the transcription process.
+Two recording modes:
 
-## Contributing
+1. **Press-and-hold** the hotkey to record; release to transcribe.
+2. **Double-tap** to lock recording; tap again to transcribe.
 
-**Issue reports are welcome!** If you encounter bugs or have feature requests, please [open an issue](https://github.com/kitlangton/Hex/issues).
+State management uses [Swift Composable Architecture](https://github.com/pointfreeco/swift-composable-architecture).
 
-**Note on Pull Requests:** At this stage, I'm not actively reviewing code contributions for significant features or core logic changes. The project is evolving rapidly and it's easier for me to work directly from issue reports. Bug fixes and documentation improvements are still appreciated, but please open an issue first to discuss before investing time in a large PR. Thanks for understanding!
+## Development
 
-### Changelog workflow
+```bash
+# Build
+xcodebuild -scheme Hex -configuration Release
 
-- **For AI agents:** Run `bun run changeset:add-ai <type> "summary"` (e.g., `bun run changeset:add-ai patch "Fix clipboard timing"`) to create a changeset non-interactively.
-- **For humans:** Run `bunx changeset` when your PR needs release notes. Pick `patch`, `minor`, or `major` and write a short summary—this creates a `.changeset/*.md` fragment.
-- Check what will ship with `bunx changeset status --verbose`.
-- `npm run sync-changelog` (or `bun run tools/scripts/sync-changelog.ts`) mirrors the root `CHANGELOG.md` into `Hex/Resources/changelog.md` so the in-app sheet always matches GitHub releases.
-- The release tool consumes the pending fragments, bumps `package.json` + `Info.plist`, regenerates `CHANGELOG.md`, and feeds the resulting section to GitHub + Sparkle automatically. Releases fail fast if no changesets are queued, so you can't forget.
-- If you truly need to ship without pending Changesets (for example, re-running a failed publish), the release script will now prompt you to confirm and choose a `patch`/`minor`/`major` bump interactively before continuing.
+# Unit tests (run from HexCore)
+cd HexCore && swift test
+
+# Open in Xcode
+open Hex.xcodeproj
+```
+
+See `AGENTS.md` for fork-specific architecture notes and `docs/hotkey-semantics.md` for hotkey behavior.
 
 ## License
 
-This project is licensed under the MIT License. See `LICENSE` for details.
+MIT, © Kit Langton. See `LICENSE`.

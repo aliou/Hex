@@ -10,7 +10,7 @@ public extension URL {
 				appropriateFor: nil,
 				create: true
 			)
-			let hexDirectory = appSupport.appendingPathComponent("com.kitlangton.Hex", isDirectory: true)
+			let hexDirectory = appSupport.appendingPathComponent("me.aliou.Hex", isDirectory: true)
 			try fm.createDirectory(at: hexDirectory, withIntermediateDirectories: true)
 			return hexDirectory
 		}
@@ -33,6 +33,22 @@ public extension URL {
 			let modelsDirectory = try hexApplicationSupport.appendingPathComponent("models", isDirectory: true)
 			try FileManager.default.createDirectory(at: modelsDirectory, withIntermediateDirectories: true)
 			return modelsDirectory
+		}
+	}
+
+	static var hexCleanupModelsDirectory: URL {
+		get throws {
+			let cleanupModelsDirectory = try hexModelsDirectory.appendingPathComponent("cleanup", isDirectory: true)
+			try FileManager.default.createDirectory(at: cleanupModelsDirectory, withIntermediateDirectories: true)
+			return cleanupModelsDirectory
+		}
+	}
+
+	static var hexCleanupHuggingFaceCacheDirectory: URL {
+		get throws {
+			let cacheDirectory = try hexCleanupModelsDirectory.appendingPathComponent("huggingface", isDirectory: true)
+			try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+			return cacheDirectory
 		}
 	}
 

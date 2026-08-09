@@ -638,6 +638,7 @@ struct ScenarioStep {
 
 func runScenario(
     hotkey: HotKey,
+    hotkeys: [HotKey]? = nil,
     useDoubleTapOnly: Bool = false,
     doubleTapLockEnabled: Bool = true,
     steps: [ScenarioStep]
@@ -653,7 +654,7 @@ func runScenario(
         $0.date.now = Date(timeIntervalSince1970: currentTime)
     } operation: {
         HotKeyProcessor(
-            hotkey: hotkey,
+            hotkeys: hotkeys ?? [hotkey],
             useDoubleTapOnly: useDoubleTapOnly,
             doubleTapLockEnabled: doubleTapLockEnabled
         )
@@ -930,5 +931,128 @@ struct MouseClickTests {
             processor.processMouseClick()
         }
         #expect(clickOutput == .discard)
+    }
+}
+
+// MARK: - Multiple Hotkey Tests
+
+struct MultipleHotkeyTests {
+    // fn (modifier-only) + F13 (key-only), both active at once.
+    private let fnHotkey = HotKey(key: nil, modifiers: [.fn])
+    private let f13Hotkey = HotKey(key: .f13, modifiers: [])
+    private let cmdAHotkey = HotKey(key: .a, modifiers: [.command])
+
+    @Test
+    func eitherHotkeyStartsAndStopsRecording() throws {
+        // First hotkey: fn press-and-hold
+        runScenario(
+            hotkey: fnHotkey,
+            hotkeys: [fnHotkey, f13Hotkey],
+            steps: [
+                ScenarioStep(time: 0.0, key: nil, modifiers: [.fn], expectedOutput: .startRecording, expectedIsMatched: true),
+                ScenarioStep(time: 0.5, key: nil, modifiers: [], expectedOutput: .stopRecording, expectedIsMatched: false),
+            ]
+        )
+
+        // Second hotkey: F13 press-and-hold
+        runScenario(
+            hotkey: fnHotkey,
+            hotkeys: [fnHotkey, f13Hotkey],
+            steps: [
+                ScenarioStep(time: 0.0, key: .f13, modifiers: [], expectedOutput: .startRecording, expectedIsMatched: true),
+                ScenarioStep(time: 0.5, key: nil, modifiers: [], expectedOutput: .stopRecording, expectedIsMatched: false),
+            ]
+        )
+    }
+
+    @Test
+    func releasingOtherHotkeyDoesNotStopActiveRecording() throws {
+        // Start with Cmd+A, then tap fn well past the accidental-activation window:
+        // after 1s, extra modifiers are ignored and releasing them must not end
+        // the recording.
+        runScenario(
+            hotkey: cmdAHotkey,
+            hotkeys: [fnHotkey, cmdAHotkey],
+            steps: [
+                ScenarioStep(time: 0.0, key: .a, modifiers: [.command], expectedOutput: .startRecording, expectedIsMatched: true),
+                // fn down (modifier change while the chord key is held, after threshold)
+                ScenarioStep(time: 1.1, key: nil, modifiers: [.command, .fn], expectedOutput: nil, expectedIsMatched: true),
+                // fn back up
+                ScenarioStep(time: 1.3, key: nil, modifiers: [.command], expectedOutput: nil, expectedIsMatched: true),
+                // A release stops
+                ScenarioStep(time: 1.5, key: nil, modifiers: [], expectedOutput: .stopRecording, expectedIsMatched: false),
+            ]
+        )
+    }
+
+    @Test
+    func unrelatedKeyPressDoesNotDirtyIdleProcessor() throws {
+        // Typing "a" while idle should not dirty the processor when a key-based
+        // hotkey (F13) is configured, otherwise modifier-only hotkeys would be
+        // unusable after any keystroke.
+        runScenario(
+            hotkey: fnHotkey,
+            hotkeys: [fnHotkey, f13Hotkey],
+            steps: [
+                ScenarioStep(time: 0.0, key: .a, modifiers: [], expectedOutput: nil, expectedIsMatched: false),
+                ScenarioStep(time: 0.1, key: nil, modifiers: [], expectedOutput: nil, expectedIsMatched: false),
+                // fn still works afterwards
+                ScenarioStep(time: 0.2, key: nil, modifiers: [.fn], expectedOutput: .startRecording, expectedIsMatched: true),
+                ScenarioStep(time: 0.5, key: nil, modifiers: [], expectedOutput: .stopRecording, expectedIsMatched: false),
+            ]
+        )
+    }
+
+    @Test
+    func doubleTapLockUsesSameHotkeyOnly() throws {
+        // Double-tap fn locks; pressing F13 (a different hotkey) stops the lock.
+        var processor = withDependencies {
+            $0.date.now = Date(timeIntervalSince1970: 0)
+        } operation: {
+            HotKeyProcessor(hotkeys: [fnHotkey, f13Hotkey])
+        }
+
+        func process(at time: TimeInterval, key: Key?, modifiers: Modifiers) -> HotKeyProcessor.Output? {
+            withDependencies {
+                $0.date.now = Date(timeIntervalSince1970: time)
+            } operation: {
+                processor.process(keyEvent: KeyEvent(key: key, modifiers: modifiers))
+            }
+        }
+
+        #expect(process(at: 0.0, key: nil, modifiers: [.fn]) == .startRecording)
+        #expect(process(at: 0.1, key: nil, modifiers: []) == .stopRecording)
+        #expect(process(at: 0.2, key: nil, modifiers: [.fn]) == .startRecording)
+        #expect(process(at: 0.3, key: nil, modifiers: []) == nil)
+        #expect(processor.state == .doubleTapLock)
+
+        // F13 press stops the lock
+        #expect(process(at: 0.6, key: .f13, modifiers: []) == .stopRecording)
+        #expect(processor.state == .idle)
+    }
+}
+
+// MARK: - Function Key Hotkey Tests
+
+struct FunctionKeyHotkeyTests {
+    // macOS sets the `fn` modifier flag on F-key events regardless of whether
+    // the fn key is held ("Use F1, F2, etc. as standard function keys" toggles
+    // the hardware behavior, not the flag). Capture strips fn, so the stored
+    // hotkey is plain FX; the processor must therefore ignore the fn flag when
+    // matching key-based hotkeys.
+    @Test
+    func keyHotkey_matchesWithOrWithoutFnFlag() throws {
+        let f13Hotkey = HotKey(key: .f13, modifiers: [])
+        runScenario(
+            hotkey: f13Hotkey,
+            steps: [
+                // Event arrives with the synthetic fn flag set
+                ScenarioStep(time: 0.0, key: .f13, modifiers: [.fn], expectedOutput: .startRecording, expectedIsMatched: true),
+                ScenarioStep(time: 0.4, key: nil, modifiers: [], expectedOutput: .stopRecording, expectedIsMatched: false),
+                // And without it
+                ScenarioStep(time: 0.6, key: .f13, modifiers: [], expectedOutput: .startRecording, expectedIsMatched: true),
+                ScenarioStep(time: 1.0, key: nil, modifiers: [], expectedOutput: .stopRecording, expectedIsMatched: false),
+            ]
+        )
     }
 }

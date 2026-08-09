@@ -4,6 +4,7 @@ import Foundation
 public struct TranscriptPersistenceClient: Sendable {
     public var save: @Sendable (
         _ result: String,
+        _ originalResult: String?,
         _ audioURL: URL,
         _ duration: TimeInterval,
         _ sourceAppBundleID: String?,
@@ -16,7 +17,7 @@ public struct TranscriptPersistenceClient: Sendable {
 extension TranscriptPersistenceClient: DependencyKey {
     public static let liveValue: TranscriptPersistenceClient = {
         return TranscriptPersistenceClient(
-            save: { result, audioURL, duration, sourceAppBundleID, sourceAppName in
+            save: { result, originalResult, audioURL, duration, sourceAppBundleID, sourceAppName in
                 let fm = FileManager.default
                 let recordingsFolder = try URL.hexApplicationSupport.appendingPathComponent("Recordings", isDirectory: true)
                 try fm.createDirectory(at: recordingsFolder, withIntermediateDirectories: true)
@@ -28,6 +29,7 @@ extension TranscriptPersistenceClient: DependencyKey {
                 return Transcript(
                     timestamp: Date(),
                     text: result,
+                    originalText: originalResult,
                     audioPath: finalURL,
                     duration: duration,
                     sourceAppBundleID: sourceAppBundleID,
@@ -41,7 +43,7 @@ extension TranscriptPersistenceClient: DependencyKey {
     }()
     
     public static let testValue = TranscriptPersistenceClient(
-        save: { _, _, _, _, _ in
+        save: { _, _, _, _, _, _ in
             Transcript(timestamp: Date(), text: "", audioPath: URL(fileURLWithPath: "/"), duration: 0)
         },
         deleteAudio: { _ in }

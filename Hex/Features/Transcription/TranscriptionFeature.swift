@@ -22,8 +22,11 @@ struct TranscriptionFeature {
     var isRecording: Bool = false
     var isTranscribing: Bool = false
     var isPrewarming: Bool = false
+    var isCleaningUp: Bool = false
     var error: String?
     var recordingStartTime: Date?
+    /// The hotkey that triggered the current recording (used to decide discard rules).
+    var activeRecordingHotkey: HotKey?
     var meter: Meter = .init(averagePower: 0, peakPower: 0)
     var sourceAppBundleID: String?
     var sourceAppName: String?
@@ -38,7 +41,7 @@ struct TranscriptionFeature {
     case audioLevelUpdated(Meter)
 
     // Hotkey actions
-    case hotKeyPressed
+    case hotKeyPressed(HotKey?)
     case hotKeyReleased
 
     // Recording flow
@@ -51,6 +54,7 @@ struct TranscriptionFeature {
 
     // Transcription result flow
     case transcriptionResult(String, URL, TimeInterval)
+    case transcriptionFinalized
     case transcriptionError(Error, URL?)
 
     // Model availability
@@ -61,6 +65,7 @@ struct TranscriptionFeature {
     case metering
     case recordingStart
     case recordingCleanup
+    case cleanupPrewarm
     case transcription
   }
 
@@ -72,6 +77,7 @@ struct TranscriptionFeature {
   @Dependency(\.sleepManagement) var sleepManagement
   @Dependency(\.date.now) var now
   @Dependency(\.transcriptPersistence) var transcriptPersistence
+  @Dependency(\.transcriptCleanup) var transcriptCleanup
 
   var body: some ReducerOf<Self> {
     Reduce { state, action in
@@ -97,9 +103,10 @@ struct TranscriptionFeature {
 
       // MARK: - HotKey Flow
 
-      case .hotKeyPressed:
+      case let .hotKeyPressed(hotkey):
         // If we're transcribing, send a cancel first. Otherwise start recording immediately.
         // We'll decide later (on release) whether to keep or discard the recording.
+        state.activeRecordingHotkey = hotkey ?? state.hexSettings.hotkey
         return handleHotKeyPressed(isTranscribing: state.isTranscribing)
 
       case .hotKeyReleased:
@@ -119,6 +126,12 @@ struct TranscriptionFeature {
 
       case let .transcriptionResult(result, audioURL, duration):
         return handleTranscriptionResult(&state, result: result, audioURL: audioURL, duration: duration)
+
+      case .transcriptionFinalized:
+        state.isTranscribing = false
+        state.isCleaningUp = false
+        state.isPrewarming = false
+        return .none
 
       case let .transcriptionError(error, audioURL):
         return handleTranscriptionError(&state, error: error, audioURL: audioURL)
@@ -174,7 +187,7 @@ private extension TranscriptionFeature {
         }
 
         // Always keep hotKeyProcessor in sync with current user hotkey preference
-        hotKeyProcessor.hotkey = hexSettings.hotkey
+        hotKeyProcessor.hotkeys = hexSettings.hotkeys
         let useDoubleTapOnly = hexSettings.doubleTapLockEnabled && hexSettings.useDoubleTapOnly
         hotKeyProcessor.doubleTapLockEnabled = hexSettings.doubleTapLockEnabled
         hotKeyProcessor.useDoubleTapOnly = useDoubleTapOnly
@@ -190,10 +203,11 @@ private extension TranscriptionFeature {
             return false
           }
 
-		  // Process the key event
-		  switch hotKeyProcessor.process(keyEvent: keyEvent) {
-		  case .startRecording:
-			Task { await send(.hotKeyPressed) }
+          // Process the key event
+          let matchedHotkey = hotKeyProcessor.matchingHotkeyForEvent(keyEvent)
+          switch hotKeyProcessor.process(keyEvent: keyEvent) {
+          case .startRecording:
+            Task { await send(.hotKeyPressed(matchedHotkey)) }
             // If the hotkey is purely modifiers, return false to keep it from interfering with normal usage
             // But if useDoubleTapOnly is true, always intercept the key
             return useDoubleTapOnly || keyEvent.key != nil
@@ -297,6 +311,7 @@ private extension TranscriptionFeature {
     // Prevent system sleep during recording
     return .merge(
       .cancel(id: CancelID.recordingCleanup),
+      prewarmCleanupModelEffect(settings: state.hexSettings),
       .run { [sleepManagement, preventSleep = state.hexSettings.preventSystemSleep] _ in
         // Play sound immediately for instant feedback
         soundEffect.play(.startRecording)
@@ -325,7 +340,7 @@ private extension TranscriptionFeature {
 
     let decision = RecordingDecisionEngine.decide(
       .init(
-        hotkey: state.hexSettings.hotkey,
+        hotkey: state.activeRecordingHotkey ?? state.hexSettings.hotkey,
         minimumKeyTime: state.hexSettings.minimumKeyTime,
         recordingStartTime: state.recordingStartTime,
         currentTime: stopTime
@@ -335,7 +350,7 @@ private extension TranscriptionFeature {
     let startStamp = startTime?.ISO8601Format() ?? "nil"
     let stopStamp = stopTime.ISO8601Format()
     let minimumKeyTime = state.hexSettings.minimumKeyTime
-    let hotkeyHasKey = state.hexSettings.hotkey.key != nil
+    let hotkeyHasKey = (state.activeRecordingHotkey ?? state.hexSettings.hotkey).key != nil
     transcriptionFeatureLogger.notice(
       "Recording stopped duration=\(String(format: "%.3f", duration))s start=\(startStamp) stop=\(stopStamp) decision=\(String(describing: decision)) minimumKeyTime=\(String(format: "%.2f", minimumKeyTime)) hotkeyHasKey=\(hotkeyHasKey)"
     )
@@ -423,6 +438,27 @@ private extension TranscriptionFeature {
       .cancellable(id: CancelID.transcription)
     )
   }
+
+  func prewarmCleanupModelEffect(settings: HexSettings) -> Effect<Action> {
+    guard settings.transcriptCleanupEnabled,
+          !settings.selectedTranscriptCleanupModel.isEmpty
+    else { return .none }
+
+    let modelID = settings.selectedTranscriptCleanupModel
+    return .run { _ in
+      guard await transcriptCleanup.isModelDownloaded(modelID) else {
+        transcriptionFeatureLogger.notice("Skipping cleanup prewarm because model is not downloaded")
+        return
+      }
+      do {
+        try await transcriptCleanup.prewarm(modelID)
+      } catch is CancellationError {
+      } catch {
+        transcriptionFeatureLogger.error("Cleanup model prewarm failed: \(error.localizedDescription)")
+      }
+    }
+    .cancellable(id: CancelID.cleanupPrewarm, cancelInFlight: true)
+  }
 }
 
 // MARK: - Transcription Handlers
@@ -434,7 +470,6 @@ private extension TranscriptionFeature {
     audioURL: URL,
     duration: TimeInterval
   ) -> Effect<Action> {
-    state.isTranscribing = false
     state.isPrewarming = false
 
     // Check for force quit command (emergency escape hatch)
@@ -450,6 +485,7 @@ private extension TranscriptionFeature {
 
     // If empty text, nothing else to do
     guard !result.isEmpty else {
+      state.isTranscribing = false
       return .run { _ in
         FileManager.default.removeItemIfExists(at: audioURL)
       }
@@ -459,10 +495,16 @@ private extension TranscriptionFeature {
     let remappings = state.hexSettings.wordRemappings
     let removalsEnabled = state.hexSettings.wordRemovalsEnabled
     let removals = state.hexSettings.wordRemovals
-    let modifiedResult: String
-    if state.isRemappingScratchpadFocused {
-      modifiedResult = result
-      transcriptionFeatureLogger.info("Scratchpad focused; skipping word modifications")
+    let cleanupEnabled = state.hexSettings.transcriptCleanupEnabled
+    let cleanupModelID = state.hexSettings.selectedTranscriptCleanupModel
+    let includeAppContext = state.hexSettings.transcriptCleanupAppContextEnabled
+    let lowercaseTranscripts = state.hexSettings.lowercaseTranscripts
+    let removePunctuation = state.hexSettings.removePunctuation
+    let skipModifications = state.isRemappingScratchpadFocused
+    let preCleanupResult: String
+    if skipModifications {
+      preCleanupResult = result
+      transcriptionFeatureLogger.info("Scratchpad focused; skipping word modifications and cleanup")
     } else {
       var output = result
       if removalsEnabled {
@@ -477,18 +519,11 @@ private extension TranscriptionFeature {
       if remappedResult != output {
         transcriptionFeatureLogger.info("Applied \(remappings.count) word remapping(s)")
       }
-      let formattedResult = TranscriptFormattingApplier.apply(
-        remappedResult,
-        lowercase: state.hexSettings.lowercaseTranscripts,
-        removePunctuation: state.hexSettings.removePunctuation
-      )
-      if formattedResult != remappedResult {
-        transcriptionFeatureLogger.info("Applied paste formatting")
-      }
-      modifiedResult = formattedResult
+      preCleanupResult = remappedResult
     }
 
-    guard !modifiedResult.isEmpty else {
+    guard !preCleanupResult.isEmpty else {
+      state.isTranscribing = false
       return .run { _ in
         FileManager.default.removeItemIfExists(at: audioURL)
       }
@@ -497,17 +532,72 @@ private extension TranscriptionFeature {
     let sourceAppBundleID = state.sourceAppBundleID
     let sourceAppName = state.sourceAppName
     let transcriptionHistory = state.$transcriptionHistory
+    let shouldCleanup = cleanupEnabled && !skipModifications && !cleanupModelID.isEmpty
+    state.isCleaningUp = shouldCleanup
 
     return .run { send in
       do {
+        var finalResult = preCleanupResult
+        if shouldCleanup {
+          if await transcriptCleanup.isModelDownloaded(cleanupModelID) {
+            let context = TranscriptCleanupContext(
+              sourceAppName: sourceAppName,
+              sourceAppBundleID: sourceAppBundleID,
+              includeAppContext: includeAppContext
+            )
+            do {
+              finalResult = try await withTimeout(seconds: 30) {
+                try await transcriptCleanup.cleanup(preCleanupResult, cleanupModelID, context)
+              }
+              transcriptionFeatureLogger.info("Applied local transcript cleanup")
+            } catch is CancellationError {
+              FileManager.default.removeItemIfExists(at: audioURL)
+              return
+            } catch {
+              transcriptionFeatureLogger.error("Local transcript cleanup failed; using deterministic transcript: \(error.localizedDescription)")
+            }
+          } else {
+            transcriptionFeatureLogger.notice("Skipping local transcript cleanup because model is not downloaded")
+          }
+        }
+
+        guard !Task.isCancelled else {
+          FileManager.default.removeItemIfExists(at: audioURL)
+          return
+        }
+
+        let formattedResult: String
+        if skipModifications {
+          formattedResult = finalResult
+        } else {
+          formattedResult = TranscriptFormattingApplier.apply(
+            finalResult,
+            lowercase: lowercaseTranscripts,
+            removePunctuation: removePunctuation
+          )
+          if formattedResult != finalResult {
+            transcriptionFeatureLogger.info("Applied paste formatting")
+          }
+        }
+
+        guard !formattedResult.isEmpty else {
+          FileManager.default.removeItemIfExists(at: audioURL)
+          await send(.transcriptionFinalized)
+          return
+        }
+
         try await finalizeRecordingAndStoreTranscript(
-          result: modifiedResult,
+          result: formattedResult,
+          originalResult: cleanupEnabled ? result : nil,
           duration: duration,
           sourceAppBundleID: sourceAppBundleID,
           sourceAppName: sourceAppName,
           audioURL: audioURL,
           transcriptionHistory: transcriptionHistory
         )
+        await send(.transcriptionFinalized)
+      } catch is CancellationError {
+        FileManager.default.removeItemIfExists(at: audioURL)
       } catch {
         await send(.transcriptionError(error, audioURL))
       }
@@ -522,6 +612,7 @@ private extension TranscriptionFeature {
   ) -> Effect<Action> {
     state.isTranscribing = false
     state.isPrewarming = false
+    state.isCleaningUp = false
     state.error = error.localizedDescription
     
     if let audioURL {
@@ -534,6 +625,7 @@ private extension TranscriptionFeature {
   /// Move file to permanent location, create a transcript record, paste text, and play sound.
   func finalizeRecordingAndStoreTranscript(
     result: String,
+    originalResult: String?,
     duration: TimeInterval,
     sourceAppBundleID: String?,
     sourceAppName: String?,
@@ -545,6 +637,7 @@ private extension TranscriptionFeature {
     if hexSettings.saveTranscriptionHistory {
       let transcript = try await transcriptPersistence.save(
         result,
+        originalResult,
         audioURL,
         duration,
         sourceAppBundleID,
@@ -581,10 +674,12 @@ private extension TranscriptionFeature {
     state.isTranscribing = false
     state.isRecording = false
     state.isPrewarming = false
+    state.isCleaningUp = false
 
     return .merge(
       .cancel(id: CancelID.transcription),
       .cancel(id: CancelID.recordingStart),
+      .cancel(id: CancelID.cleanupPrewarm),
       .run { [sleepManagement] _ in
         // Allow system to sleep again
         await sleepManagement.allowSleep()
@@ -607,10 +702,12 @@ private extension TranscriptionFeature {
   func handleDiscard(_ state: inout State) -> Effect<Action> {
     state.isRecording = false
     state.isPrewarming = false
+    state.isCleaningUp = false
 
     // Silently discard - no sound effect
     return .merge(
       .cancel(id: CancelID.recordingStart),
+      .cancel(id: CancelID.cleanupPrewarm),
       .run { [sleepManagement] _ in
         // Allow system to sleep again
         await sleepManagement.allowSleep()
@@ -632,7 +729,7 @@ struct TranscriptionView: View {
   @ObserveInjection var inject
 
   var status: TranscriptionIndicatorView.Status {
-    if store.isTranscribing {
+    if store.isTranscribing || store.isCleaningUp {
       return .transcribing
     } else if store.isRecording {
       return .recording
@@ -669,5 +766,30 @@ private enum ForceQuitCommandDetector {
       .components(separatedBy: CharacterSet.alphanumerics.inverted)
       .filter { !$0.isEmpty }
       .joined(separator: " ")
+  }
+}
+
+private struct TimeoutError: Error, LocalizedError {
+  var errorDescription: String? { "Timed out" }
+}
+
+private func withTimeout<T: Sendable>(
+  seconds: Double,
+  operation: @escaping @Sendable () async throws -> T
+) async throws -> T {
+  try await withThrowingTaskGroup(of: T.self) { group in
+    group.addTask {
+      try await operation()
+    }
+    group.addTask {
+      try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+      throw TimeoutError()
+    }
+
+    guard let value = try await group.next() else {
+      throw CancellationError()
+    }
+    group.cancelAll()
+    return value
   }
 }
