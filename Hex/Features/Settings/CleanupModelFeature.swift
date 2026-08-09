@@ -4,6 +4,11 @@ import Dependencies
 import HexCore
 import IdentifiedCollections
 
+struct CleanupModelAvailability: Equatable, Sendable {
+  var modelID: String
+  var isDownloaded: Bool
+}
+
 @Reducer
 struct CleanupModelFeature {
   @ObservableState
@@ -37,7 +42,7 @@ struct CleanupModelFeature {
     case modelDeleted(String)
     case modelDeletionFailed(String)
     case openModelLocation(String)
-    case availabilityLoaded([(String, Bool)])
+    case availabilityLoaded([CleanupModelAvailability])
   }
 
   @Dependency(\.transcriptCleanup) var transcriptCleanup
@@ -48,16 +53,16 @@ struct CleanupModelFeature {
       case .task:
         let modelIDs = state.models.map(\.internalName)
         return .run { send in
-          var availability: [(String, Bool)] = []
+          var availability: [CleanupModelAvailability] = []
           for modelID in modelIDs {
-            availability.append((modelID, await transcriptCleanup.isModelDownloaded(modelID)))
+            availability.append(.init(modelID: modelID, isDownloaded: await transcriptCleanup.isModelDownloaded(modelID)))
           }
           await send(.availabilityLoaded(availability))
         }
 
       case let .availabilityLoaded(availability):
-        for (modelID, isDownloaded) in availability {
-          state.models[id: modelID]?.isDownloaded = isDownloaded
+        for item in availability {
+          state.models[id: item.modelID]?.isDownloaded = item.isDownloaded
         }
         return .none
 

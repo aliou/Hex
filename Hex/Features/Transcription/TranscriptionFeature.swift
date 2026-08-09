@@ -477,8 +477,9 @@ private extension TranscriptionFeature {
     let includeAppContext = state.hexSettings.transcriptCleanupAppContextEnabled
     let lowercaseTranscripts = state.hexSettings.lowercaseTranscripts
     let removePunctuation = state.hexSettings.removePunctuation
+    let skipModifications = state.isRemappingScratchpadFocused
     let preCleanupResult: String
-    if state.isRemappingScratchpadFocused {
+    if skipModifications {
       preCleanupResult = result
       transcriptionFeatureLogger.info("Scratchpad focused; skipping word modifications and cleanup")
     } else {
@@ -508,35 +509,44 @@ private extension TranscriptionFeature {
     let sourceAppBundleID = state.sourceAppBundleID
     let sourceAppName = state.sourceAppName
     let transcriptionHistory = state.$transcriptionHistory
-    let shouldCleanup = cleanupEnabled && !state.isRemappingScratchpadFocused && !cleanupModelID.isEmpty
+    let shouldCleanup = cleanupEnabled && !skipModifications && !cleanupModelID.isEmpty
     state.isCleaningUp = shouldCleanup
 
     return .run { send in
       do {
         var finalResult = preCleanupResult
         if shouldCleanup {
-          let context = TranscriptCleanupContext(
-            sourceAppName: sourceAppName,
-            sourceAppBundleID: sourceAppBundleID,
-            includeAppContext: includeAppContext
-          )
-          do {
-            finalResult = try await withTimeout(seconds: 30) {
-              try await transcriptCleanup.cleanup(preCleanupResult, cleanupModelID, context)
+          if await transcriptCleanup.isModelDownloaded(cleanupModelID) {
+            let context = TranscriptCleanupContext(
+              sourceAppName: sourceAppName,
+              sourceAppBundleID: sourceAppBundleID,
+              includeAppContext: includeAppContext
+            )
+            do {
+              finalResult = try await withTimeout(seconds: 30) {
+                try await transcriptCleanup.cleanup(preCleanupResult, cleanupModelID, context)
+              }
+              transcriptionFeatureLogger.info("Applied local transcript cleanup")
+            } catch {
+              transcriptionFeatureLogger.error("Local transcript cleanup failed; using deterministic transcript: \(error.localizedDescription)")
             }
-            transcriptionFeatureLogger.info("Applied local transcript cleanup")
-          } catch {
-            transcriptionFeatureLogger.error("Local transcript cleanup failed; using deterministic transcript: \(error.localizedDescription)")
+          } else {
+            transcriptionFeatureLogger.notice("Skipping local transcript cleanup because model is not downloaded")
           }
         }
 
-        let formattedResult = TranscriptFormattingApplier.apply(
-          finalResult,
-          lowercase: lowercaseTranscripts,
-          removePunctuation: removePunctuation
-        )
-        if formattedResult != finalResult {
-          transcriptionFeatureLogger.info("Applied paste formatting")
+        let formattedResult: String
+        if skipModifications {
+          formattedResult = finalResult
+        } else {
+          formattedResult = TranscriptFormattingApplier.apply(
+            finalResult,
+            lowercase: lowercaseTranscripts,
+            removePunctuation: removePunctuation
+          )
+          if formattedResult != finalResult {
+            transcriptionFeatureLogger.info("Applied paste formatting")
+          }
         }
 
         guard !formattedResult.isEmpty else {
@@ -628,6 +638,7 @@ private extension TranscriptionFeature {
     state.isTranscribing = false
     state.isRecording = false
     state.isPrewarming = false
+    state.isCleaningUp = false
 
     return .merge(
       .cancel(id: CancelID.transcription),
@@ -654,6 +665,7 @@ private extension TranscriptionFeature {
   func handleDiscard(_ state: inout State) -> Effect<Action> {
     state.isRecording = false
     state.isPrewarming = false
+    state.isCleaningUp = false
 
     // Silently discard - no sound effect
     return .merge(
