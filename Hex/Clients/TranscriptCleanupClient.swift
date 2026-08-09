@@ -92,10 +92,14 @@ actor TranscriptCleanupClientLive {
     guard !trimmed.isEmpty else { return transcript }
 
     let container = try await loadContainer(modelID: modelID) { _ in }
-    let prompt = Self.prompt(for: trimmed, context: context)
     let input = UserInput(chat: [
-      .system("You clean up dictated transcripts. Return only the final cleaned text. Do not explain."),
-      .user(prompt),
+      .system(TranscriptCleanupPrompt.system),
+      .user(TranscriptCleanupPrompt.userMessage(
+        rawTranscript: trimmed,
+        appName: context.sourceAppName,
+        bundleID: context.sourceAppBundleID,
+        includeAppContext: context.includeAppContext
+      )),
     ])
 
     let maxTokens = Self.maxTokens(for: trimmed)
@@ -205,57 +209,6 @@ actor TranscriptCleanupClientLive {
     return ModelConfiguration(id: modelID, defaultPrompt: "", extraEOSTokens: ["<turn|>"])
   }
 
-  private static func prompt(for transcript: String, context: TranscriptCleanupContext) -> String {
-    var sections: [String] = [basePrompt]
-    if context.includeAppContext {
-      var lines = ["Current app context:"]
-      if let sourceAppName = context.sourceAppName, !sourceAppName.isEmpty {
-        lines.append("- App name: \(promptSafeContextValue(sourceAppName))")
-      }
-      if let sourceAppBundleID = context.sourceAppBundleID, !sourceAppBundleID.isEmpty {
-        lines.append("- Bundle ID: \(promptSafeContextValue(sourceAppBundleID))")
-      }
-      sections.append(lines.joined(separator: "\n"))
-    }
-    sections.append("Transcript:\n\(transcript)")
-    return sections.joined(separator: "\n\n")
-  }
-
-  private static let basePrompt = """
-  You clean up dictated transcripts for direct paste.
-
-  Output only the cleaned transcript. No explanation. No labels. No markdown unless the speaker clearly dictated it.
-
-  Priority order:
-  1. Preserve the original words and meaning.
-  2. Improve readability with punctuation, capitalization, sentence boundaries, and paragraph breaks.
-  3. Remove filler and obvious repeated words only when safe.
-
-  Conservative editing rules:
-  - Do not rewrite for style.
-  - Do not summarize or shorten ideas.
-  - Do not make the speaker sound more certain, formal, or polished than they are.
-  - Do not add facts, examples, headings, bullets, names, or conclusions.
-  - Do not correct an unclear word into a different word unless the correction is obvious from nearby words.
-  - Fix words or numbers that are obviously wrong from the local context, such as API/HTTP status codes: "four oh one", "four dot one", or "four zero one" should become "401" when the speaker is talking about HTTP/API responses.
-  - If a word, name, product, project, app, command, path, acronym, code symbol, or variable name is unclear, keep the exact spoken wording.
-  - Never output two alternative spellings for the same term.
-
-  Self-correction rules:
-  - If the speaker starts a phrase and immediately replaces it with a clearer phrase, keep the final phrase and remove the abandoned phrase.
-  - Remove repeated setup words only when the final intent is clear. For example, "when we have the model when we have the cleanup enabled" should become "when we have the cleanup enabled".
-  - Do not remove repeated words when they may be intentional emphasis or part of a list.
-
-  Paragraph rules:
-  - Use paragraph breaks for readability. Paragraph breaks do not require rewriting the text.
-  - Under 80 words: usually one paragraph.
-  - 80 to 180 words: split into 2 or 3 paragraphs if the speaker makes more than one point.
-  - Over 180 words: split into multiple paragraphs.
-  - Start a new paragraph at topic shifts, new points, examples, plan changes, questions, or conclusions.
-  - Aim for 2 to 4 sentences per paragraph.
-  - Do not put every sentence on its own line.
-  """
-
   private static func maxTokens(for transcript: String) -> Int {
     let words = transcript.split { $0.isWhitespace || $0.isNewline }.count
     return min(max(128, words * 3 + 96), 2048)
@@ -270,14 +223,6 @@ actor TranscriptCleanupClientLive {
   private static func escapedRepoDirectoryName(_ modelID: String) -> String? {
     guard !modelID.isEmpty else { return nil }
     return "models--" + modelID.replacingOccurrences(of: "/", with: "--")
-  }
-
-  private static func promptSafeContextValue(_ value: String) -> String {
-    value
-      .components(separatedBy: .newlines)
-      .joined(separator: " ")
-      .prefix(120)
-      .description
   }
 
   private static func seconds(since start: ContinuousClock.Instant) -> Double {

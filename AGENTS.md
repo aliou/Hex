@@ -132,6 +132,7 @@ The in-app changelog lives at `Hex/Resources/changelog.md` and is shown via the 
 
 ## Git Commit Messages
 
+- Use Conventional Commits for every commit: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`, or another standard type.
 - Use a concise, descriptive subject line that captures the user-facing impact (roughly 50–70 characters).
 - Follow up with as much context as needed in the body. Include the rationale, notable tradeoffs, relevant logs, or reproduction steps—future debugging benefits from having the full story directly in git history.
 - Reference any related GitHub issues in the body if the change tracks ongoing work.

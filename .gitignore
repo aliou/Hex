@@ -13,6 +13,13 @@ HexCore/.build
 HexCore/.swiftpm/
 FluidAudio/
 .tmp/
+.derived-data/
+
+# Local eval fixtures can contain private audio and transcripts.
+Tools/HexEvals/.build/
+Tools/HexEvals/.swiftpm/
+Tools/HexEvals/Fixtures/*
+!Tools/HexEvals/Fixtures/README.md
 
 # Claude
 .claude/
