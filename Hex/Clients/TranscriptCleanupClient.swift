@@ -120,7 +120,7 @@ actor TranscriptCleanupClientLive {
       currentModelID = nil
     }
     guard let directory = repoCacheDirectory(modelID) else { return }
-    try? FileManager.default.removeItem(at: directory)
+    try FileManager.default.removeItem(at: directory)
   }
 
   func isModelDownloaded(_ modelID: String) async -> Bool {
@@ -201,10 +201,10 @@ actor TranscriptCleanupClientLive {
     if context.includeAppContext {
       var lines = ["Current app context:"]
       if let sourceAppName = context.sourceAppName, !sourceAppName.isEmpty {
-        lines.append("- App name: \(sourceAppName)")
+        lines.append("- App name: \(promptSafeContextValue(sourceAppName))")
       }
       if let sourceAppBundleID = context.sourceAppBundleID, !sourceAppBundleID.isEmpty {
-        lines.append("- Bundle ID: \(sourceAppBundleID)")
+        lines.append("- Bundle ID: \(promptSafeContextValue(sourceAppBundleID))")
       }
       sections.append(lines.joined(separator: "\n"))
     }
@@ -255,6 +255,14 @@ actor TranscriptCleanupClientLive {
   private static func escapedRepoDirectoryName(_ modelID: String) -> String? {
     guard !modelID.isEmpty else { return nil }
     return "models--" + modelID.replacingOccurrences(of: "/", with: "--")
+  }
+
+  private static func promptSafeContextValue(_ value: String) -> String {
+    value
+      .components(separatedBy: .newlines)
+      .joined(separator: " ")
+      .prefix(120)
+      .description
   }
 
   private static func seconds(since start: ContinuousClock.Instant) -> Double {
