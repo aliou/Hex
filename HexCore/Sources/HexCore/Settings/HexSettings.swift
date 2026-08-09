@@ -55,6 +55,9 @@ public struct HexSettings: Codable, Equatable, Sendable {
 	public var wordRemappings: [WordRemapping]
 	public var lowercaseTranscripts: Bool
 	public var removePunctuation: Bool
+	public var transcriptCleanupEnabled: Bool
+	public var transcriptCleanupAppContextEnabled: Bool
+	public var selectedTranscriptCleanupModel: String
 
 	private mutating func normalize() {
 		if !doubleTapLockEnabled {
@@ -93,7 +96,10 @@ public struct HexSettings: Codable, Equatable, Sendable {
 		wordRemovals: [WordRemoval] = HexSettings.defaultWordRemovals,
 		wordRemappings: [WordRemapping] = [],
 		lowercaseTranscripts: Bool = false,
-		removePunctuation: Bool = false
+		removePunctuation: Bool = false,
+		transcriptCleanupEnabled: Bool = true,
+		transcriptCleanupAppContextEnabled: Bool = false,
+		selectedTranscriptCleanupModel: String = "mlx-community/gemma-4-e2b-it-4bit"
 	) {
 		self.soundEffectsEnabled = soundEffectsEnabled
 		self.soundEffectsVolume = soundEffectsVolume
@@ -121,6 +127,9 @@ public struct HexSettings: Codable, Equatable, Sendable {
 		self.wordRemappings = wordRemappings
 		self.lowercaseTranscripts = lowercaseTranscripts
 		self.removePunctuation = removePunctuation
+		self.transcriptCleanupEnabled = transcriptCleanupEnabled
+		self.transcriptCleanupAppContextEnabled = transcriptCleanupAppContextEnabled
+		self.selectedTranscriptCleanupModel = selectedTranscriptCleanupModel
 		normalize()
 	}
 
@@ -172,6 +181,9 @@ private enum HexSettingKey: String, CodingKey, CaseIterable {
 	case wordRemappings
 	case lowercaseTranscripts
 	case removePunctuation
+	case transcriptCleanupEnabled
+	case transcriptCleanupAppContextEnabled
+	case selectedTranscriptCleanupModel
 }
 
 private struct SettingsField<Value: Codable & Sendable> {
@@ -326,6 +338,9 @@ private enum HexSettingsSchema {
 			default: defaults.wordRemappings
 		).eraseToAny(),
 		SettingsField(.lowercaseTranscripts, keyPath: \.lowercaseTranscripts, default: defaults.lowercaseTranscripts).eraseToAny(),
-		SettingsField(.removePunctuation, keyPath: \.removePunctuation, default: defaults.removePunctuation).eraseToAny()
+		SettingsField(.removePunctuation, keyPath: \.removePunctuation, default: defaults.removePunctuation).eraseToAny(),
+		SettingsField(.transcriptCleanupEnabled, keyPath: \.transcriptCleanupEnabled, default: defaults.transcriptCleanupEnabled).eraseToAny(),
+		SettingsField(.transcriptCleanupAppContextEnabled, keyPath: \.transcriptCleanupAppContextEnabled, default: defaults.transcriptCleanupAppContextEnabled).eraseToAny(),
+		SettingsField(.selectedTranscriptCleanupModel, keyPath: \.selectedTranscriptCleanupModel, default: defaults.selectedTranscriptCleanupModel).eraseToAny()
 	]
 }

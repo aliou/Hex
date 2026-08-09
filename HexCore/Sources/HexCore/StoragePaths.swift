@@ -36,6 +36,22 @@ public extension URL {
 		}
 	}
 
+	static var hexCleanupModelsDirectory: URL {
+		get throws {
+			let cleanupModelsDirectory = try hexModelsDirectory.appendingPathComponent("cleanup", isDirectory: true)
+			try FileManager.default.createDirectory(at: cleanupModelsDirectory, withIntermediateDirectories: true)
+			return cleanupModelsDirectory
+		}
+	}
+
+	static var hexCleanupHuggingFaceCacheDirectory: URL {
+		get throws {
+			let cacheDirectory = try hexCleanupModelsDirectory.appendingPathComponent("huggingface", isDirectory: true)
+			try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+			return cacheDirectory
+		}
+	}
+
 	/// Where FluidAudio (Parakeet) keeps its on-disk model caches.
 	///
 	/// FluidAudio writes to `<Application Support>/FluidAudio/Models/<variant>` in
