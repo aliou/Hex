@@ -237,8 +237,14 @@ actor TranscriptCleanupClientLive {
   - Do not make the speaker sound more certain, formal, or polished than they are.
   - Do not add facts, examples, headings, bullets, names, or conclusions.
   - Do not correct an unclear word into a different word unless the correction is obvious from nearby words.
+  - Fix words or numbers that are obviously wrong from the local context, such as API/HTTP status codes: "four oh one", "four dot one", or "four zero one" should become "401" when the speaker is talking about HTTP/API responses.
   - If a word, name, product, project, app, command, path, acronym, code symbol, or variable name is unclear, keep the exact spoken wording.
   - Never output two alternative spellings for the same term.
+
+  Self-correction rules:
+  - If the speaker starts a phrase and immediately replaces it with a clearer phrase, keep the final phrase and remove the abandoned phrase.
+  - Remove repeated setup words only when the final intent is clear. For example, "when we have the model when we have the cleanup enabled" should become "when we have the cleanup enabled".
+  - Do not remove repeated words when they may be intentional emphasis or part of a list.
 
   Paragraph rules:
   - Use paragraph breaks for readability. Paragraph breaks do not require rewriting the text.

@@ -588,6 +588,7 @@ private extension TranscriptionFeature {
 
         try await finalizeRecordingAndStoreTranscript(
           result: formattedResult,
+          originalResult: cleanupEnabled ? result : nil,
           duration: duration,
           sourceAppBundleID: sourceAppBundleID,
           sourceAppName: sourceAppName,
@@ -624,6 +625,7 @@ private extension TranscriptionFeature {
   /// Move file to permanent location, create a transcript record, paste text, and play sound.
   func finalizeRecordingAndStoreTranscript(
     result: String,
+    originalResult: String?,
     duration: TimeInterval,
     sourceAppBundleID: String?,
     sourceAppName: String?,
@@ -635,6 +637,7 @@ private extension TranscriptionFeature {
     if hexSettings.saveTranscriptionHistory {
       let transcript = try await transcriptPersistence.save(
         result,
+        originalResult,
         audioURL,
         duration,
         sourceAppBundleID,
