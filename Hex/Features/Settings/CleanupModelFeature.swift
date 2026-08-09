@@ -37,7 +37,8 @@ struct CleanupModelFeature {
     case selectModel(String)
     case downloadModel(String)
     case downloadProgress(Double)
-    case downloadCompleted(Result<String, String>)
+    case downloadCompleted(String)
+    case downloadFailed(String)
     case deleteModel(String)
     case modelDeleted(String)
     case modelDeletionFailed(String)
@@ -80,9 +81,9 @@ struct CleanupModelFeature {
             try await transcriptCleanup.downloadModel(modelID) { progress in
               Task { await send(.downloadProgress(progress.fractionCompleted)) }
             }
-            await send(.downloadCompleted(.success(modelID)))
+            await send(.downloadCompleted(modelID))
           } catch {
-            await send(.downloadCompleted(.failure(error.localizedDescription)))
+            await send(.downloadFailed(error.localizedDescription))
           }
         }
 
@@ -90,7 +91,7 @@ struct CleanupModelFeature {
         state.downloadProgress = progress
         return .none
 
-      case let .downloadCompleted(.success(modelID)):
+      case let .downloadCompleted(modelID):
         state.isDownloading = false
         state.downloadProgress = 1
         state.downloadError = nil
@@ -99,7 +100,7 @@ struct CleanupModelFeature {
         state.$hexSettings.withLock { $0.selectedTranscriptCleanupModel = modelID }
         return .none
 
-      case let .downloadCompleted(.failure(message)):
+      case let .downloadFailed(message):
         state.isDownloading = false
         state.downloadingModelID = nil
         state.downloadError = message
