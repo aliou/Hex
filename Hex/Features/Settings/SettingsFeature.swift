@@ -66,6 +66,7 @@ struct SettingsFeature {
 
     // Model Management
     var modelDownload = ModelDownloadFeature.State()
+    var cleanupModel = CleanupModelFeature.State()
     var shouldFlashModelSection = false
 
   }
@@ -108,6 +109,7 @@ struct SettingsFeature {
 
     // Model Management
     case modelDownload(ModelDownloadFeature.Action)
+    case cleanupModel(CleanupModelFeature.Action)
     
     // History Management
     case toggleSaveTranscriptionHistory(Bool)
@@ -127,6 +129,8 @@ struct SettingsFeature {
     case setRemappingScratchpadFocused(Bool)
     case setLowercaseTranscripts(Bool)
     case setRemovePunctuation(Bool)
+    case setTranscriptCleanupEnabled(Bool)
+    case setTranscriptCleanupAppContextEnabled(Bool)
   }
 
   @Dependency(\.keyEventMonitor) var keyEventMonitor
@@ -258,6 +262,10 @@ struct SettingsFeature {
 
     Scope(state: \.modelDownload, action: \.modelDownload) {
       ModelDownloadFeature()
+    }
+
+    Scope(state: \.cleanupModel, action: \.cleanupModel) {
+      CleanupModelFeature()
     }
 
     Reduce { state, action in
@@ -468,6 +476,14 @@ struct SettingsFeature {
         state.$hexSettings.withLock { $0.removePunctuation = enabled }
         return .none
 
+      case let .setTranscriptCleanupEnabled(enabled):
+        state.$hexSettings.withLock { $0.transcriptCleanupEnabled = enabled }
+        return .none
+
+      case let .setTranscriptCleanupAppContextEnabled(enabled):
+        state.$hexSettings.withLock { $0.transcriptCleanupAppContextEnabled = enabled }
+        return .none
+
       case .startSettingPasteLastTranscriptHotkey:
         beginCapture(.pasteLastTranscript, state: &state)
         return .none
@@ -581,6 +597,9 @@ struct SettingsFeature {
 
       // Model Management
       case .modelDownload:
+        return .none
+
+      case .cleanupModel:
         return .none
       
       // Microphone device selection

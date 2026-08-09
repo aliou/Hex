@@ -16,6 +16,12 @@
 		47E05E0A2D44525B00D26DA6 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = 47E05E092D44525B00D26DA6 /* Dependencies */; };
 		47E05E0C2D44525B00D26DA6 /* DependenciesMacros in Frameworks */ = {isa = PBXBuildFile; productRef = 47E05E0B2D44525B00D26DA6 /* DependenciesMacros */; };
 		47E16A622EC6C9D300885CF7 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 47E16A612EC6C9D300885CF7 /* FluidAudio */; };
+		B60C10012F3A000100000001 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = B60C10002F3A000100000001 /* MLX */; };
+		B60C10022F3A000100000001 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = B60C10032F3A000100000001 /* MLXLLM */; };
+		B60C10042F3A000100000001 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = B60C10052F3A000100000001 /* MLXLMCommon */; };
+		B60C10062F3A000100000001 /* MLXHuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = B60C10072F3A000100000001 /* MLXHuggingFace */; };
+		B60C10082F3A000100000001 /* HuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = B60C10092F3A000100000001 /* HuggingFace */; };
+		B60C100A2F3A000100000001 /* Tokenizers in Frameworks */ = {isa = PBXBuildFile; productRef = B60C100B2F3A000100000001 /* Tokenizers */; };
 		4F0D6A012F1A000100000001 /* HexCore in Frameworks */ = {isa = PBXBuildFile; productRef = 476316262E5FB31400913CDE /* HexCore */; };
 		4F0D6A022F1A000100000001 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 47E05E012D444EE900D26DA6 /* ComposableArchitecture */; };
 		4F0D6A042F1A000100000001 /* Sharing in Frameworks */ = {isa = PBXBuildFile; productRef = 4F0D6A072F1A000100000001 /* Sharing */; };
@@ -98,6 +104,12 @@
 				47512ABF2E14D8C9000E25BA /* WhisperKit in Frameworks */,
 				47E05E052D444EF800D26DA6 /* Sauce in Frameworks */,
 				47E16A622EC6C9D300885CF7 /* FluidAudio in Frameworks */,
+				B60C10012F3A000100000001 /* MLX in Frameworks */,
+				B60C10022F3A000100000001 /* MLXLLM in Frameworks */,
+				B60C10042F3A000100000001 /* MLXLMCommon in Frameworks */,
+				B60C10062F3A000100000001 /* MLXHuggingFace in Frameworks */,
+				B60C10082F3A000100000001 /* HuggingFace in Frameworks */,
+				B60C100A2F3A000100000001 /* Tokenizers in Frameworks */,
 				47C08AB62DE9F61B00564AE6 /* Inject in Frameworks */,
 				4765045E2D45900200C7EA60 /* Pow in Frameworks */,
 				47E05E0C2D44525B00D26DA6 /* DependenciesMacros in Frameworks */,
@@ -203,6 +215,12 @@
 				4F0D6A072F1A000100000001 /* Sharing */,
 				4F0D6A0C2F1A000100000001 /* CasePaths */,
 				4F0D6A0D2F1A000100000001 /* IdentifiedCollections */,
+				B60C10002F3A000100000001 /* MLX */,
+				B60C10032F3A000100000001 /* MLXLLM */,
+				B60C10052F3A000100000001 /* MLXLMCommon */,
+				B60C10072F3A000100000001 /* MLXHuggingFace */,
+				B60C10092F3A000100000001 /* HuggingFace */,
+				B60C100B2F3A000100000001 /* Tokenizers */,
 			);
 			productName = Hex;
 			productReference = 47E05DEE2D444EC600D26DA6 /* Hex Debug.app */;
@@ -249,6 +267,10 @@
 				4F0D6A062F1A000100000001 /* XCRemoteSwiftPackageReference "swift-sharing" */,
 				4F0D6A0A2F1A000100000001 /* XCRemoteSwiftPackageReference "swift-case-paths" */,
 				4F0D6A0B2F1A000100000001 /* XCRemoteSwiftPackageReference "swift-identified-collections" */,
+				B60C100C2F3A000100000001 /* XCRemoteSwiftPackageReference "mlx-swift" */,
+				B60C100D2F3A000100000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
+				B60C100E2F3A000100000001 /* XCRemoteSwiftPackageReference "swift-huggingface" */,
+				B60C100F2F3A000100000001 /* XCRemoteSwiftPackageReference "swift-transformers" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 47E05DEF2D444EC600D26DA6 /* Products */;
@@ -699,6 +721,38 @@
 				minimumVersion = 2.4.1;
 			};
 		};
+		B60C100C2F3A000100000001 /* XCRemoteSwiftPackageReference "mlx-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.29.0;
+			};
+		};
+		B60C100D2F3A000100000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift-lm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.31.3;
+			};
+		};
+		B60C100E2F3A000100000001 /* XCRemoteSwiftPackageReference "swift-huggingface" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/huggingface/swift-huggingface";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.0;
+			};
+		};
+		B60C100F2F3A000100000001 /* XCRemoteSwiftPackageReference "swift-transformers" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/huggingface/swift-transformers";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.2;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -765,6 +819,36 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B5045C952D78DED500D0A119 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
 			productName = MarkdownUI;
+		};
+		B60C10002F3A000100000001 /* MLX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B60C100C2F3A000100000001 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLX;
+		};
+		B60C10032F3A000100000001 /* MLXLLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B60C100D2F3A000100000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLLM;
+		};
+		B60C10052F3A000100000001 /* MLXLMCommon */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B60C100D2F3A000100000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLMCommon;
+		};
+		B60C10072F3A000100000001 /* MLXHuggingFace */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B60C100D2F3A000100000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXHuggingFace;
+		};
+		B60C10092F3A000100000001 /* HuggingFace */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B60C100E2F3A000100000001 /* XCRemoteSwiftPackageReference "swift-huggingface" */;
+			productName = HuggingFace;
+		};
+		B60C100B2F3A000100000001 /* Tokenizers */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B60C100F2F3A000100000001 /* XCRemoteSwiftPackageReference "swift-transformers" */;
+			productName = Tokenizers;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

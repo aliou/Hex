@@ -22,6 +22,7 @@ struct TranscriptionFeature {
     var isRecording: Bool = false
     var isTranscribing: Bool = false
     var isPrewarming: Bool = false
+    var isCleaningUp: Bool = false
     var error: String?
     var recordingStartTime: Date?
     /// The hotkey that triggered the current recording (used to decide discard rules).
@@ -53,6 +54,7 @@ struct TranscriptionFeature {
 
     // Transcription result flow
     case transcriptionResult(String, URL, TimeInterval)
+    case transcriptionFinalized
     case transcriptionError(Error, URL?)
 
     // Model availability
@@ -74,6 +76,7 @@ struct TranscriptionFeature {
   @Dependency(\.sleepManagement) var sleepManagement
   @Dependency(\.date.now) var now
   @Dependency(\.transcriptPersistence) var transcriptPersistence
+  @Dependency(\.transcriptCleanup) var transcriptCleanup
 
   var body: some ReducerOf<Self> {
     Reduce { state, action in
@@ -122,6 +125,12 @@ struct TranscriptionFeature {
 
       case let .transcriptionResult(result, audioURL, duration):
         return handleTranscriptionResult(&state, result: result, audioURL: audioURL, duration: duration)
+
+      case .transcriptionFinalized:
+        state.isTranscribing = false
+        state.isCleaningUp = false
+        state.isPrewarming = false
+        return .none
 
       case let .transcriptionError(error, audioURL):
         return handleTranscriptionError(&state, error: error, audioURL: audioURL)
@@ -438,7 +447,6 @@ private extension TranscriptionFeature {
     audioURL: URL,
     duration: TimeInterval
   ) -> Effect<Action> {
-    state.isTranscribing = false
     state.isPrewarming = false
 
     // Check for force quit command (emergency escape hatch)
@@ -454,6 +462,7 @@ private extension TranscriptionFeature {
 
     // If empty text, nothing else to do
     guard !result.isEmpty else {
+      state.isTranscribing = false
       return .run { _ in
         FileManager.default.removeItemIfExists(at: audioURL)
       }
@@ -463,10 +472,15 @@ private extension TranscriptionFeature {
     let remappings = state.hexSettings.wordRemappings
     let removalsEnabled = state.hexSettings.wordRemovalsEnabled
     let removals = state.hexSettings.wordRemovals
-    let modifiedResult: String
+    let cleanupEnabled = state.hexSettings.transcriptCleanupEnabled
+    let cleanupModelID = state.hexSettings.selectedTranscriptCleanupModel
+    let includeAppContext = state.hexSettings.transcriptCleanupAppContextEnabled
+    let lowercaseTranscripts = state.hexSettings.lowercaseTranscripts
+    let removePunctuation = state.hexSettings.removePunctuation
+    let preCleanupResult: String
     if state.isRemappingScratchpadFocused {
-      modifiedResult = result
-      transcriptionFeatureLogger.info("Scratchpad focused; skipping word modifications")
+      preCleanupResult = result
+      transcriptionFeatureLogger.info("Scratchpad focused; skipping word modifications and cleanup")
     } else {
       var output = result
       if removalsEnabled {
@@ -481,18 +495,11 @@ private extension TranscriptionFeature {
       if remappedResult != output {
         transcriptionFeatureLogger.info("Applied \(remappings.count) word remapping(s)")
       }
-      let formattedResult = TranscriptFormattingApplier.apply(
-        remappedResult,
-        lowercase: state.hexSettings.lowercaseTranscripts,
-        removePunctuation: state.hexSettings.removePunctuation
-      )
-      if formattedResult != remappedResult {
-        transcriptionFeatureLogger.info("Applied paste formatting")
-      }
-      modifiedResult = formattedResult
+      preCleanupResult = remappedResult
     }
 
-    guard !modifiedResult.isEmpty else {
+    guard !preCleanupResult.isEmpty else {
+      state.isTranscribing = false
       return .run { _ in
         FileManager.default.removeItemIfExists(at: audioURL)
       }
@@ -501,17 +508,52 @@ private extension TranscriptionFeature {
     let sourceAppBundleID = state.sourceAppBundleID
     let sourceAppName = state.sourceAppName
     let transcriptionHistory = state.$transcriptionHistory
+    let shouldCleanup = cleanupEnabled && !state.isRemappingScratchpadFocused && !cleanupModelID.isEmpty
+    state.isCleaningUp = shouldCleanup
 
     return .run { send in
       do {
+        var finalResult = preCleanupResult
+        if shouldCleanup {
+          let context = TranscriptCleanupContext(
+            sourceAppName: sourceAppName,
+            sourceAppBundleID: sourceAppBundleID,
+            includeAppContext: includeAppContext
+          )
+          do {
+            finalResult = try await withTimeout(seconds: 30) {
+              try await transcriptCleanup.cleanup(preCleanupResult, cleanupModelID, context)
+            }
+            transcriptionFeatureLogger.info("Applied local transcript cleanup")
+          } catch {
+            transcriptionFeatureLogger.error("Local transcript cleanup failed; using deterministic transcript: \(error.localizedDescription)")
+          }
+        }
+
+        let formattedResult = TranscriptFormattingApplier.apply(
+          finalResult,
+          lowercase: lowercaseTranscripts,
+          removePunctuation: removePunctuation
+        )
+        if formattedResult != finalResult {
+          transcriptionFeatureLogger.info("Applied paste formatting")
+        }
+
+        guard !formattedResult.isEmpty else {
+          FileManager.default.removeItemIfExists(at: audioURL)
+          await send(.transcriptionFinalized)
+          return
+        }
+
         try await finalizeRecordingAndStoreTranscript(
-          result: modifiedResult,
+          result: formattedResult,
           duration: duration,
           sourceAppBundleID: sourceAppBundleID,
           sourceAppName: sourceAppName,
           audioURL: audioURL,
           transcriptionHistory: transcriptionHistory
         )
+        await send(.transcriptionFinalized)
       } catch {
         await send(.transcriptionError(error, audioURL))
       }
@@ -526,6 +568,7 @@ private extension TranscriptionFeature {
   ) -> Effect<Action> {
     state.isTranscribing = false
     state.isPrewarming = false
+    state.isCleaningUp = false
     state.error = error.localizedDescription
     
     if let audioURL {
@@ -636,7 +679,7 @@ struct TranscriptionView: View {
   @ObserveInjection var inject
 
   var status: TranscriptionIndicatorView.Status {
-    if store.isTranscribing {
+    if store.isTranscribing || store.isCleaningUp {
       return .transcribing
     } else if store.isRecording {
       return .recording
@@ -673,5 +716,30 @@ private enum ForceQuitCommandDetector {
       .components(separatedBy: CharacterSet.alphanumerics.inverted)
       .filter { !$0.isEmpty }
       .joined(separator: " ")
+  }
+}
+
+private struct TimeoutError: Error, LocalizedError {
+  var errorDescription: String? { "Timed out" }
+}
+
+private func withTimeout<T: Sendable>(
+  seconds: Double,
+  operation: @escaping @Sendable () async throws -> T
+) async throws -> T {
+  try await withThrowingTaskGroup(of: T.self) { group in
+    group.addTask {
+      try await operation()
+    }
+    group.addTask {
+      try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+      throw TimeoutError()
+    }
+
+    guard let value = try await group.next() else {
+      throw CancellationError()
+    }
+    group.cancelAll()
+    return value
   }
 }
