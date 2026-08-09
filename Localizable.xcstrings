@@ -7,6 +7,16 @@
     "·" : {
 
     },
+    "%@ · %@ · Local cleanup" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@ · Local cleanup"
+          }
+        }
+      }
+    },
     "%@ %@" : {
       "localizations" : {
         "en" : {
@@ -64,6 +74,9 @@
     "Accuracy" : {
 
     },
+    "Add Hot Key" : {
+
+    },
     "Add pattern" : {
 
     },
@@ -85,9 +98,6 @@
 
     },
     "Audio Behavior while Recording" : {
-
-    },
-    "Become a Sponsor" : {
 
     },
     "Browse Models…" : {
@@ -129,6 +139,7 @@
     },
     "Check for Updates" : {
       "comment" : "Check for updates button in About section of Settings",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -140,6 +151,7 @@
     },
     "Check for Updates…" : {
       "comment" : "Check for updates button in top menu",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -150,6 +162,9 @@
       }
     },
     "Choose a transcription model" : {
+
+    },
+    "Clean up transcripts with local model" : {
 
     },
     "Clear shortcut" : {
@@ -188,6 +203,9 @@
       }
     },
     "Copy transcription text to clipboard in addition to pasting it" : {
+
+    },
+    "Delete" : {
 
     },
     "Delete All" : {
@@ -399,6 +417,9 @@
         }
       }
     },
+    "Include current app name in cleanup prompt" : {
+
+    },
     "Input" : {
 
     },
@@ -600,6 +621,9 @@
     "Remove Download…" : {
 
     },
+    "Remove hot key" : {
+
+    },
     "Remove matching words from every transcript." : {
 
     },
@@ -749,10 +773,10 @@
     "Super Fast Mode" : {
 
     },
-    "Support the developer" : {
+    "This frees %@ on this Mac. You can download it again anytime." : {
 
     },
-    "This frees %@ on this Mac. You can download it again anytime." : {
+    "Transcript Cleanup" : {
 
     },
     "Transcription history is currently disabled." : {
@@ -823,8 +847,12 @@
     "View All Models…" : {
 
     },
+    "View source" : {
+
+    },
     "Visit our GitHub" : {
       "comment" : "button text to link to github",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -838,6 +866,9 @@
 
     },
     "When disabled, transcriptions will not be saved and audio files will be deleted immediately after transcription." : {
+
+    },
+    "When enabled, Hex passes the app name and bundle ID captured at recording start into the local cleanup prompt." : {
 
     },
     "Word rules" : {

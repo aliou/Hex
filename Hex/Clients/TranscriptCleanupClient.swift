@@ -44,6 +44,7 @@ enum CleanupModels {
 @DependencyClient
 struct TranscriptCleanupClient {
   var cleanup: @Sendable (String, String, TranscriptCleanupContext) async throws -> String
+  var prewarm: @Sendable (String) async throws -> Void
   var downloadModel: @Sendable (String, @escaping @Sendable (Progress) -> Void) async throws -> Void
   var deleteModel: @Sendable (String) async throws -> Void
   var isModelDownloaded: @Sendable (String) async -> Bool = { _ in false }
@@ -55,6 +56,7 @@ extension TranscriptCleanupClient: DependencyKey {
     let live = TranscriptCleanupClientLive()
     return Self(
       cleanup: { try await live.cleanup(transcript: $0, modelID: $1, context: $2) },
+      prewarm: { try await live.prewarm(modelID: $0) },
       downloadModel: { try await live.downloadModel($0, progress: $1) },
       deleteModel: { try await live.deleteModel($0) },
       isModelDownloaded: { await live.isModelDownloaded($0) },
@@ -73,6 +75,13 @@ extension DependencyValues {
 actor TranscriptCleanupClientLive {
   private var modelContainer: ModelContainer?
   private var currentModelID: String?
+
+  func prewarm(modelID: String) async throws {
+    guard !modelID.isEmpty else { return }
+    guard modelContainer == nil || currentModelID != modelID else { return }
+    cleanupLogger.info("Prewarming cleanup model \(modelID)")
+    _ = try await loadContainer(modelID: modelID) { _ in }
+  }
 
   func cleanup(
     transcript: String,

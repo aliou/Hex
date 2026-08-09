@@ -65,6 +65,7 @@ struct TranscriptionFeature {
     case metering
     case recordingStart
     case recordingCleanup
+    case cleanupPrewarm
     case transcription
   }
 
@@ -310,6 +311,7 @@ private extension TranscriptionFeature {
     // Prevent system sleep during recording
     return .merge(
       .cancel(id: CancelID.recordingCleanup),
+      prewarmCleanupModelEffect(settings: state.hexSettings),
       .run { [sleepManagement, preventSleep = state.hexSettings.preventSystemSleep] _ in
         // Play sound immediately for instant feedback
         soundEffect.play(.startRecording)
@@ -435,6 +437,27 @@ private extension TranscriptionFeature {
       }
       .cancellable(id: CancelID.transcription)
     )
+  }
+
+  func prewarmCleanupModelEffect(settings: HexSettings) -> Effect<Action> {
+    guard settings.transcriptCleanupEnabled,
+          !settings.selectedTranscriptCleanupModel.isEmpty
+    else { return .none }
+
+    let modelID = settings.selectedTranscriptCleanupModel
+    return .run { _ in
+      guard await transcriptCleanup.isModelDownloaded(modelID) else {
+        transcriptionFeatureLogger.notice("Skipping cleanup prewarm because model is not downloaded")
+        return
+      }
+      do {
+        try await transcriptCleanup.prewarm(modelID)
+      } catch is CancellationError {
+      } catch {
+        transcriptionFeatureLogger.error("Cleanup model prewarm failed: \(error.localizedDescription)")
+      }
+    }
+    .cancellable(id: CancelID.cleanupPrewarm, cancelInFlight: true)
   }
 }
 
@@ -653,6 +676,7 @@ private extension TranscriptionFeature {
     return .merge(
       .cancel(id: CancelID.transcription),
       .cancel(id: CancelID.recordingStart),
+      .cancel(id: CancelID.cleanupPrewarm),
       .run { [sleepManagement] _ in
         // Allow system to sleep again
         await sleepManagement.allowSleep()
@@ -680,6 +704,7 @@ private extension TranscriptionFeature {
     // Silently discard - no sound effect
     return .merge(
       .cancel(id: CancelID.recordingStart),
+      .cancel(id: CancelID.cleanupPrewarm),
       .run { [sleepManagement] _ in
         // Allow system to sleep again
         await sleepManagement.allowSleep()
