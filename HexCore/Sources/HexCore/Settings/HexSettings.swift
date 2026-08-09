@@ -25,7 +25,13 @@ public struct HexSettings: Codable, Equatable, Sendable {
 
 	public var soundEffectsEnabled: Bool
 	public var soundEffectsVolume: Double
-	public var hotkey: HotKey
+	/// All recording hotkeys, active simultaneously. Always non-empty.
+	public var hotkeys: [HotKey]
+	/// The primary hotkey (first entry). Setting replaces the whole list.
+	public var hotkey: HotKey {
+		get { hotkeys.first ?? .empty }
+		set { hotkeys = [newValue] }
+	}
 	public var openOnLogin: Bool
 	public var showDockIcon: Bool
 	public var selectedModel: String
@@ -50,9 +56,13 @@ public struct HexSettings: Codable, Equatable, Sendable {
 	public var lowercaseTranscripts: Bool
 	public var removePunctuation: Bool
 
-	private mutating func normalizeDoubleTapSettings() {
+	private mutating func normalize() {
 		if !doubleTapLockEnabled {
 			useDoubleTapOnly = false
+		}
+		hotkeys = hotkeys.filter { $0 != .empty }
+		if hotkeys.isEmpty {
+			hotkeys = [HexSettings().hotkeys[0]]
 		}
 	}
 
@@ -60,6 +70,7 @@ public struct HexSettings: Codable, Equatable, Sendable {
 		soundEffectsEnabled: Bool = true,
 		soundEffectsVolume: Double = HexSettings.baseSoundEffectsVolume,
 		hotkey: HotKey = .init(key: nil, modifiers: [.option]),
+		hotkeys: [HotKey]? = nil,
 		openOnLogin: Bool = false,
 		showDockIcon: Bool = true,
 		selectedModel: String = ParakeetModel.multilingualV3.identifier,
@@ -86,7 +97,7 @@ public struct HexSettings: Codable, Equatable, Sendable {
 	) {
 		self.soundEffectsEnabled = soundEffectsEnabled
 		self.soundEffectsVolume = soundEffectsVolume
-		self.hotkey = hotkey
+		self.hotkeys = hotkeys ?? [hotkey]
 		self.openOnLogin = openOnLogin
 		self.showDockIcon = showDockIcon
 		self.selectedModel = selectedModel
@@ -110,7 +121,7 @@ public struct HexSettings: Codable, Equatable, Sendable {
 		self.wordRemappings = wordRemappings
 		self.lowercaseTranscripts = lowercaseTranscripts
 		self.removePunctuation = removePunctuation
-		normalizeDoubleTapSettings()
+		normalize()
 	}
 
 	public init(from decoder: Decoder) throws {
@@ -119,7 +130,7 @@ public struct HexSettings: Codable, Equatable, Sendable {
 		for field in HexSettingsSchema.fields {
 			try field.decode(into: &self, from: container)
 		}
-		normalizeDoubleTapSettings()
+		normalize()
 	}
 
 	public func encode(to encoder: Encoder) throws {
@@ -135,7 +146,8 @@ public struct HexSettings: Codable, Equatable, Sendable {
 private enum HexSettingKey: String, CodingKey, CaseIterable {
 	case soundEffectsEnabled
 	case soundEffectsVolume
-	case hotkey
+	case hotkey // Legacy
+	case hotkeys
 	case openOnLogin
 	case showDockIcon
 	case selectedModel
@@ -222,7 +234,21 @@ private enum HexSettingsSchema {
 	nonisolated(unsafe) static let fields: [AnySettingsField] = [
 		SettingsField(.soundEffectsEnabled, keyPath: \.soundEffectsEnabled, default: defaults.soundEffectsEnabled).eraseToAny(),
 		SettingsField(.soundEffectsVolume, keyPath: \.soundEffectsVolume, default: defaults.soundEffectsVolume).eraseToAny(),
-		SettingsField(.hotkey, keyPath: \.hotkey, default: defaults.hotkey).eraseToAny(),
+		SettingsField(
+			.hotkeys,
+			keyPath: \.hotkeys,
+			default: defaults.hotkeys,
+			decode: { container, key, defaultValue in
+				// Migrate the legacy single `hotkey` value into the list.
+				if let hotkeys = try container.decodeIfPresent([HotKey].self, forKey: key) {
+					return hotkeys
+				}
+				if let legacy = try container.decodeIfPresent(HotKey.self, forKey: .hotkey) {
+					return [legacy]
+				}
+				return defaultValue
+			}
+		).eraseToAny(),
 		SettingsField(.openOnLogin, keyPath: \.openOnLogin, default: defaults.openOnLogin).eraseToAny(),
 		SettingsField(.showDockIcon, keyPath: \.showDockIcon, default: defaults.showDockIcon).eraseToAny(),
 		SettingsField(.selectedModel, keyPath: \.selectedModel, default: defaults.selectedModel).eraseToAny(),

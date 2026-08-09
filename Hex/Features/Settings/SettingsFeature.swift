@@ -12,8 +12,10 @@ import SwiftUI
 private let settingsLogger = HexLog.settings
 private typealias SettingsAudioPropertyListenerBlock = @convention(block) (UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void
 
-private enum HotKeyCaptureTarget {
-  case recording
+private enum HotKeyCaptureTarget: Equatable {
+  /// Capturing a recording hotkey for the given slot (index into `hexSettings.hotkeys`).
+  /// An index equal to `hotkeys.count` means capturing a new hotkey to append.
+  case recording(Int)
   case pasteLastTranscript
 }
 
@@ -46,6 +48,10 @@ struct SettingsFeature {
     @Shared(.transcriptionHistory) var transcriptionHistory: TranscriptionHistory
     @Shared(.hotkeyPermissionState) var hotkeyPermissionState: HotkeyPermissionState
 
+    /// Slot of the recording hotkey being captured (index into `hexSettings.hotkeys`;
+    /// equal to `hotkeys.count` when capturing a new hotkey to append).
+    var settingHotKeyIndex: Int = 0
+
     var languages: IdentifiedArrayOf<Language> = []
     var currentModifiers: Modifiers = .init(modifiers: [])
     var currentPasteLastModifiers: Modifiers = .init(modifiers: [])
@@ -66,7 +72,9 @@ struct SettingsFeature {
 
     // Existing
     case task
-    case startSettingHotKey
+    case startSettingHotKey(index: Int)
+    case addHotKey
+    case removeHotKey(Int)
     case startSettingPasteLastTranscriptHotkey
     case clearPasteLastTranscriptHotkey
     case keyEvent(KeyEvent)
@@ -102,7 +110,7 @@ struct SettingsFeature {
     case setMaxHistoryEntries(Int?)
 
     // Modifier configuration
-    case setModifierSide(Modifier.Kind, Modifier.Side)
+    case setModifierSide(index: Int, kind: Modifier.Kind, side: Modifier.Side)
 
     // Word remappings
     case setWordRemovalsEnabled(Bool)
@@ -172,16 +180,22 @@ struct SettingsFeature {
   }
 
   private func applyCapturedHotKey(key: Key?, modifiers: Modifiers, for target: HotKeyCaptureTarget, state: inout State) {
+    let captured = HotKey(key: key, modifiers: modifiers.erasingSides())
     switch target {
-    case .recording:
+    case let .recording(index):
       state.$hexSettings.withLock {
-        $0.hotkey.key = key
-        $0.hotkey.modifiers = modifiers.erasingSides()
+        // Don't keep duplicate chords
+        guard !$0.hotkeys.contains(captured) else { return }
+        if index < $0.hotkeys.count {
+          $0.hotkeys[index] = captured
+        } else {
+          $0.hotkeys.append(captured)
+        }
       }
     case .pasteLastTranscript:
       guard let key else { return }
       state.$hexSettings.withLock {
-        $0.pasteLastTranscriptHotkey = HotKey(key: key, modifiers: modifiers.erasingSides())
+        $0.pasteLastTranscriptHotkey = captured
       }
     }
   }
@@ -205,13 +219,14 @@ struct SettingsFeature {
       return .none
     }
 
-    if target == .recording, keyEvent.modifiers.isEmpty {
+    if case .recording = target, keyEvent.modifiers.isEmpty {
       applyCapturedHotKey(key: nil, modifiers: updatedModifiers, for: target, state: &state)
       endCapture(target, state: &state)
     }
 
     return .none
   }
+
 
   var body: some ReducerOf<Self> {
     BindingReducer()
@@ -357,8 +372,23 @@ struct SettingsFeature {
           
         }
 
-      case .startSettingHotKey:
-        beginCapture(.recording, state: &state)
+      case let .startSettingHotKey(index):
+        state.settingHotKeyIndex = index
+        beginCapture(.recording(index), state: &state)
+        return .none
+
+      case .addHotKey:
+        // Append a placeholder and immediately capture a replacement chord.
+        state.$hexSettings.withLock { $0.hotkeys.append(.empty) }
+        state.settingHotKeyIndex = state.hexSettings.hotkeys.count - 1
+        beginCapture(.recording(state.settingHotKeyIndex), state: &state)
+        return .none
+
+      case let .removeHotKey(index):
+        state.$hexSettings.withLock {
+          guard $0.hotkeys.count > 1, $0.hotkeys.indices.contains(index) else { return }
+          $0.hotkeys.remove(at: index)
+        }
         return .none
 
       case .addWordRemoval:
@@ -425,7 +455,7 @@ struct SettingsFeature {
         }
 
         guard state.isSettingHotKey else { return .none }
-        return handleCapture(keyEvent, for: .recording, state: &state)
+        return handleCapture(keyEvent, for: .recording(state.settingHotKeyIndex), state: &state)
 
       case let .toggleOpenOnLogin(enabled):
         state.$hexSettings.withLock { $0.openOnLogin = enabled }
@@ -563,10 +593,11 @@ struct SettingsFeature {
         state.$hexSettings.withLock { $0.maxHistoryEntries = maxHistoryEntries }
         return .none
 
-      case let .setModifierSide(kind, side):
-        guard state.hexSettings.hotkey.key == nil else { return .none }
+      case let .setModifierSide(index, kind, side):
         state.$hexSettings.withLock {
-          $0.hotkey.modifiers = $0.hotkey.modifiers.setting(kind: kind, to: side)
+          guard $0.hotkeys.indices.contains(index),
+                $0.hotkeys[index].key == nil else { return }
+          $0.hotkeys[index].modifiers = $0.hotkeys[index].modifiers.setting(kind: kind, to: side)
         }
         return .none
 

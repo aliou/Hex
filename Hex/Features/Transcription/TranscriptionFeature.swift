@@ -24,6 +24,8 @@ struct TranscriptionFeature {
     var isPrewarming: Bool = false
     var error: String?
     var recordingStartTime: Date?
+    /// The hotkey that triggered the current recording (used to decide discard rules).
+    var activeRecordingHotkey: HotKey?
     var meter: Meter = .init(averagePower: 0, peakPower: 0)
     var sourceAppBundleID: String?
     var sourceAppName: String?
@@ -38,7 +40,7 @@ struct TranscriptionFeature {
     case audioLevelUpdated(Meter)
 
     // Hotkey actions
-    case hotKeyPressed
+    case hotKeyPressed(HotKey?)
     case hotKeyReleased
 
     // Recording flow
@@ -97,9 +99,10 @@ struct TranscriptionFeature {
 
       // MARK: - HotKey Flow
 
-      case .hotKeyPressed:
+      case let .hotKeyPressed(hotkey):
         // If we're transcribing, send a cancel first. Otherwise start recording immediately.
         // We'll decide later (on release) whether to keep or discard the recording.
+        state.activeRecordingHotkey = hotkey ?? state.hexSettings.hotkey
         return handleHotKeyPressed(isTranscribing: state.isTranscribing)
 
       case .hotKeyReleased:
@@ -174,7 +177,7 @@ private extension TranscriptionFeature {
         }
 
         // Always keep hotKeyProcessor in sync with current user hotkey preference
-        hotKeyProcessor.hotkey = hexSettings.hotkey
+        hotKeyProcessor.hotkeys = hexSettings.hotkeys
         let useDoubleTapOnly = hexSettings.doubleTapLockEnabled && hexSettings.useDoubleTapOnly
         hotKeyProcessor.doubleTapLockEnabled = hexSettings.doubleTapLockEnabled
         hotKeyProcessor.useDoubleTapOnly = useDoubleTapOnly
@@ -190,10 +193,11 @@ private extension TranscriptionFeature {
             return false
           }
 
-		  // Process the key event
-		  switch hotKeyProcessor.process(keyEvent: keyEvent) {
-		  case .startRecording:
-			Task { await send(.hotKeyPressed) }
+          // Process the key event
+          let matchedHotkey = hotKeyProcessor.matchingHotkeyForEvent(keyEvent)
+          switch hotKeyProcessor.process(keyEvent: keyEvent) {
+          case .startRecording:
+            Task { await send(.hotKeyPressed(matchedHotkey)) }
             // If the hotkey is purely modifiers, return false to keep it from interfering with normal usage
             // But if useDoubleTapOnly is true, always intercept the key
             return useDoubleTapOnly || keyEvent.key != nil
@@ -325,7 +329,7 @@ private extension TranscriptionFeature {
 
     let decision = RecordingDecisionEngine.decide(
       .init(
-        hotkey: state.hexSettings.hotkey,
+        hotkey: state.activeRecordingHotkey ?? state.hexSettings.hotkey,
         minimumKeyTime: state.hexSettings.minimumKeyTime,
         recordingStartTime: state.recordingStartTime,
         currentTime: stopTime
@@ -335,7 +339,7 @@ private extension TranscriptionFeature {
     let startStamp = startTime?.ISO8601Format() ?? "nil"
     let stopStamp = stopTime.ISO8601Format()
     let minimumKeyTime = state.hexSettings.minimumKeyTime
-    let hotkeyHasKey = state.hexSettings.hotkey.key != nil
+    let hotkeyHasKey = (state.activeRecordingHotkey ?? state.hexSettings.hotkey).key != nil
     transcriptionFeatureLogger.notice(
       "Recording stopped duration=\(String(format: "%.3f", duration))s start=\(startStamp) stop=\(stopStamp) decision=\(String(describing: decision)) minimumKeyTime=\(String(format: "%.2f", minimumKeyTime)) hotkeyHasKey=\(hotkeyHasKey)"
     )

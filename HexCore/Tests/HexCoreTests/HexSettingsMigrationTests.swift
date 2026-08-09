@@ -29,6 +29,32 @@ final class HexSettingsMigrationTests: XCTestCase {
 		XCTAssertFalse(decoded.removePunctuation)
 	}
 
+	func testV1FixtureMigratesSingleHotkeyIntoList() throws {
+		let data = try loadFixture(named: "v1")
+		let decoded = try JSONDecoder().decode(HexSettings.self, from: data)
+
+		XCTAssertEqual(decoded.hotkeys, [HotKey(key: nil, modifiers: [.option])])
+		XCTAssertEqual(decoded.hotkey, HotKey(key: nil, modifiers: [.option]))
+	}
+
+	func testHotkeysRoundTripPreservesList() throws {
+		let settings = HexSettings(hotkeys: [
+			HotKey(key: nil, modifiers: [.fn]),
+			HotKey(key: .f13, modifiers: [])
+		])
+		let data = try JSONEncoder().encode(settings)
+		let decoded = try JSONDecoder().decode(HexSettings.self, from: data)
+
+		XCTAssertEqual(decoded, settings)
+		XCTAssertEqual(decoded.hotkeys.count, 2)
+	}
+
+	func testHotkeysDefaultsToPrimaryHotkeyWhenKeyMissing() throws {
+		let decoded = try JSONDecoder().decode(HexSettings.self, from: Data("{}".utf8))
+
+		XCTAssertEqual(decoded.hotkeys, [HexSettings().hotkey])
+	}
+
 	func testEncodeDecodeRoundTripPreservesDefaults() throws {
 		let settings = HexSettings()
 		let data = try JSONEncoder().encode(settings)

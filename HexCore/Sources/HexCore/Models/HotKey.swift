@@ -320,6 +320,9 @@ public struct HotKey: Codable, Equatable, Sendable {
     self.key = key
     self.modifiers = modifiers
   }
+
+  /// A hotkey with no key and no modifiers, used as a fallback default.
+  public static let empty = HotKey(key: nil, modifiers: [])
 }
 
 extension Key {
