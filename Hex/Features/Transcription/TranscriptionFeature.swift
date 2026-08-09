@@ -527,12 +527,20 @@ private extension TranscriptionFeature {
                 try await transcriptCleanup.cleanup(preCleanupResult, cleanupModelID, context)
               }
               transcriptionFeatureLogger.info("Applied local transcript cleanup")
+            } catch is CancellationError {
+              FileManager.default.removeItemIfExists(at: audioURL)
+              return
             } catch {
               transcriptionFeatureLogger.error("Local transcript cleanup failed; using deterministic transcript: \(error.localizedDescription)")
             }
           } else {
             transcriptionFeatureLogger.notice("Skipping local transcript cleanup because model is not downloaded")
           }
+        }
+
+        guard !Task.isCancelled else {
+          FileManager.default.removeItemIfExists(at: audioURL)
+          return
         }
 
         let formattedResult: String
@@ -564,6 +572,8 @@ private extension TranscriptionFeature {
           transcriptionHistory: transcriptionHistory
         )
         await send(.transcriptionFinalized)
+      } catch is CancellationError {
+        FileManager.default.removeItemIfExists(at: audioURL)
       } catch {
         await send(.transcriptionError(error, audioURL))
       }

@@ -171,7 +171,7 @@ actor TranscriptCleanupClientLive {
     progress: @escaping @Sendable (Progress) -> Void
   ) async throws -> ResolvedModelConfiguration {
     let configuration = Self.configuration(for: modelID)
-    let hubClient = try HubClient(cache: HubCache(cacheDirectory: URL.hexCleanupHuggingFaceCacheDirectory))
+    let hubClient = try HubClient(cache: HubCache(location: .fixed(directory: URL.hexCleanupHuggingFaceCacheDirectory)))
     return try await resolve(
       configuration: configuration,
       from: #hubDownloader(hubClient),
