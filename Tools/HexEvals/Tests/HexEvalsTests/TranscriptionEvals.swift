@@ -25,6 +25,7 @@ struct TranscriptionEvals {
       )
 
       print("[transcription] \(evalCase.id): transcribed in \(result.transcriptionSeconds)s")
+      assertEquals(evalCase.expectedOutput, result.rawTranscript, id: evalCase.id)
       assertContains(evalCase.expectedContains, in: result.rawTranscript, id: evalCase.id)
       assertDoesNotContain(evalCase.expectedNotContains, in: result.rawTranscript, id: evalCase.id)
     }

@@ -24,6 +24,7 @@ struct EndToEndEvals {
         model: evalCase.transcriptionModel,
         language: evalCase.language
       )
+      assertEquals(evalCase.expectedRawOutput, transcription.rawTranscript, id: evalCase.id)
       assertContains(evalCase.expectedRawContains, in: transcription.rawTranscript, id: evalCase.id)
 
       let cleanup = try await CleanupEvalRunner.shared.clean(
@@ -35,6 +36,7 @@ struct EndToEndEvals {
       )
 
       print("[end-to-end] \(evalCase.id): transcribed in \(transcription.transcriptionSeconds)s, cleaned in \(cleanup.generationSeconds)s")
+      assertEquals(evalCase.expectedCleanedOutput, cleanup.output, id: evalCase.id)
       assertContains(evalCase.expectedCleanedContains, in: cleanup.output, id: evalCase.id)
       assertDoesNotContain(evalCase.expectedCleanedNotContains, in: cleanup.output, id: evalCase.id)
     }

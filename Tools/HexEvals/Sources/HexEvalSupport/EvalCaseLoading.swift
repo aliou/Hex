@@ -42,6 +42,7 @@ public struct CleanupEvalCase: Codable, Sendable {
   public var appName: String?
   public var bundleID: String?
   public var includeAppContext: Bool?
+  public var expectedOutput: String?
   public var expectedContains: [String]?
   public var expectedNotContains: [String]?
 }
@@ -51,6 +52,7 @@ public struct TranscriptionEvalCase: Codable, Sendable {
   public var audioPath: String
   public var model: String
   public var language: String?
+  public var expectedOutput: String?
   public var expectedContains: [String]?
   public var expectedNotContains: [String]?
 }
@@ -64,6 +66,8 @@ public struct EndToEndEvalCase: Codable, Sendable {
   public var appName: String?
   public var bundleID: String?
   public var includeAppContext: Bool?
+  public var expectedRawOutput: String?
+  public var expectedCleanedOutput: String?
   public var expectedRawContains: [String]?
   public var expectedCleanedContains: [String]?
   public var expectedCleanedNotContains: [String]?

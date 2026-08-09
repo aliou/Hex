@@ -17,6 +17,7 @@ FluidAudio/
 
 # Local eval fixtures can contain private audio and transcripts.
 Tools/HexEvals/.build/
+Tools/HexEvals/.derived-data/
 Tools/HexEvals/.swiftpm/
 Tools/HexEvals/Fixtures/*
 !Tools/HexEvals/Fixtures/README.md
