@@ -14,7 +14,15 @@ struct HotKeySectionView: View {
                     hotKeyRow(index: index, hotKey: hotKey)
                 }
 
-                if !store.isSettingHotKey {
+                if store.isAddingHotKey {
+                    HStack(spacing: 8) {
+                        HotKeyView(modifiers: store.currentModifiers, key: nil, isActive: true)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                store.send(.cancelSettingHotKey)
+                            }
+                    }
+                } else if !store.isSettingHotKey {
                     Button {
                         store.send(.addHotKey)
                     } label: {
@@ -80,7 +88,7 @@ struct HotKeySectionView: View {
 
     @ViewBuilder
     private func hotKeyRow(index: Int, hotKey: HotKey) -> some View {
-        let isCapturingThis = store.isSettingHotKey && store.settingHotKeyIndex == index
+        let isCapturingThis = store.isSettingHotKey && !store.isAddingHotKey && store.settingHotKeyIndex == index
         let key = isCapturingThis ? nil : hotKey.key
         let modifiers = isCapturingThis ? store.currentModifiers : hotKey.modifiers
 

@@ -481,15 +481,19 @@ extension HotKeyProcessor {
     /// Returns the configured hotkey matching the given keyboard event, if any.
     ///
     /// # Matching Rules
-    /// - **Key+modifier hotkey**: Both key and modifiers must match exactly
-    /// - **Modifier-only hotkey**: Modifiers match exactly and no key is pressed
+    /// - **Key+modifier hotkey**: Both key and modifiers must match exactly.
+    ///   The `fn` modifier flag is ignored for key-based hotkeys: macOS sets it
+    ///   on F-key events regardless of whether fn is physically held, so a hotkey
+    ///   captured as plain F13 would otherwise never match.
+    /// - **Modifier-only hotkey**: Modifiers match exactly and no key is pressed.
     ///
     /// - Parameter e: The keyboard event to check
     /// - Returns: The matching hotkey, or nil
     private func matchingHotkey(for e: KeyEvent) -> HotKey? {
         hotkeys.first { hotkey in
             if hotkey.key != nil {
-                return e.key == hotkey.key && e.modifiers.matchesExactly(hotkey.modifiers)
+                return e.key == hotkey.key
+                    && e.modifiers.removing(kind: .fn).matchesExactly(hotkey.modifiers)
             } else {
                 return e.key == nil && e.modifiers.matchesExactly(hotkey.modifiers)
             }

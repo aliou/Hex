@@ -1031,3 +1031,28 @@ struct MultipleHotkeyTests {
         #expect(processor.state == .idle)
     }
 }
+
+// MARK: - Function Key Hotkey Tests
+
+struct FunctionKeyHotkeyTests {
+    // macOS sets the `fn` modifier flag on F-key events regardless of whether
+    // the fn key is held ("Use F1, F2, etc. as standard function keys" toggles
+    // the hardware behavior, not the flag). Capture strips fn, so the stored
+    // hotkey is plain FX; the processor must therefore ignore the fn flag when
+    // matching key-based hotkeys.
+    @Test
+    func keyHotkey_matchesWithOrWithoutFnFlag() throws {
+        let f13Hotkey = HotKey(key: .f13, modifiers: [])
+        runScenario(
+            hotkey: f13Hotkey,
+            steps: [
+                // Event arrives with the synthetic fn flag set
+                ScenarioStep(time: 0.0, key: .f13, modifiers: [.fn], expectedOutput: .startRecording, expectedIsMatched: true),
+                ScenarioStep(time: 0.4, key: nil, modifiers: [], expectedOutput: .stopRecording, expectedIsMatched: false),
+                // And without it
+                ScenarioStep(time: 0.6, key: .f13, modifiers: [], expectedOutput: .startRecording, expectedIsMatched: true),
+                ScenarioStep(time: 1.0, key: nil, modifiers: [], expectedOutput: .stopRecording, expectedIsMatched: false),
+            ]
+        )
+    }
+}

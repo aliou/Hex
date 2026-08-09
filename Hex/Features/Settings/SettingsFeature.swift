@@ -13,8 +13,9 @@ private let settingsLogger = HexLog.settings
 private typealias SettingsAudioPropertyListenerBlock = @convention(block) (UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void
 
 private enum HotKeyCaptureTarget: Equatable {
-  /// Capturing a recording hotkey for the given slot (index into `hexSettings.hotkeys`).
-  /// An index equal to `hotkeys.count` means capturing a new hotkey to append.
+  /// Capturing a new recording hotkey to append.
+  case newRecording
+  /// Re-capturing the recording hotkey at the given index in `hexSettings.hotkeys`.
   case recording(Int)
   case pasteLastTranscript
 }
@@ -48,9 +49,11 @@ struct SettingsFeature {
     @Shared(.transcriptionHistory) var transcriptionHistory: TranscriptionHistory
     @Shared(.hotkeyPermissionState) var hotkeyPermissionState: HotkeyPermissionState
 
-    /// Slot of the recording hotkey being captured (index into `hexSettings.hotkeys`;
-    /// equal to `hotkeys.count` when capturing a new hotkey to append).
+    /// Slot of the recording hotkey being re-captured (index into `hexSettings.hotkeys`).
+    /// Ignored while capturing a brand-new hotkey.
     var settingHotKeyIndex: Int = 0
+    /// True while "Add Hot Key" capture is pending (no placeholder stored yet).
+    var isAddingHotKey: Bool = false
 
     var languages: IdentifiedArrayOf<Language> = []
     var currentModifiers: Modifiers = .init(modifiers: [])
@@ -74,6 +77,7 @@ struct SettingsFeature {
     case task
     case startSettingHotKey(index: Int)
     case addHotKey
+    case cancelSettingHotKey
     case removeHotKey(Int)
     case startSettingPasteLastTranscriptHotkey
     case clearPasteLastTranscriptHotkey
@@ -141,6 +145,10 @@ struct SettingsFeature {
 
   private func beginCapture(_ target: HotKeyCaptureTarget, state: inout State) {
     switch target {
+    case .newRecording:
+      state.$isSettingHotKey.withLock { $0 = true }
+      state.currentModifiers = .init(modifiers: [])
+      state.isAddingHotKey = true
     case .recording:
       state.$isSettingHotKey.withLock { $0 = true }
       state.currentModifiers = .init(modifiers: [])
@@ -152,9 +160,10 @@ struct SettingsFeature {
 
   private func endCapture(_ target: HotKeyCaptureTarget, state: inout State) {
     switch target {
-    case .recording:
+    case .newRecording, .recording:
       state.$isSettingHotKey.withLock { $0 = false }
       state.currentModifiers = .init(modifiers: [])
+      state.isAddingHotKey = false
     case .pasteLastTranscript:
       state.$isSettingPasteLastTranscriptHotkey.withLock { $0 = false }
       state.currentPasteLastModifiers = .init(modifiers: [])
@@ -163,7 +172,7 @@ struct SettingsFeature {
 
   private func captureModifiers(for target: HotKeyCaptureTarget, state: State) -> Modifiers {
     switch target {
-    case .recording:
+    case .newRecording, .recording:
       state.currentModifiers
     case .pasteLastTranscript:
       state.currentPasteLastModifiers
@@ -172,7 +181,7 @@ struct SettingsFeature {
 
   private func updateCaptureModifiers(_ modifiers: Modifiers, for target: HotKeyCaptureTarget, state: inout State) {
     switch target {
-    case .recording:
+    case .newRecording, .recording:
       state.currentModifiers = modifiers
     case .pasteLastTranscript:
       state.currentPasteLastModifiers = modifiers
@@ -182,15 +191,18 @@ struct SettingsFeature {
   private func applyCapturedHotKey(key: Key?, modifiers: Modifiers, for target: HotKeyCaptureTarget, state: inout State) {
     let captured = HotKey(key: key, modifiers: modifiers.erasingSides())
     switch target {
+    case .newRecording:
+      state.$hexSettings.withLock {
+        // Don't keep duplicate chords
+        guard !$0.hotkeys.contains(captured) else { return }
+        $0.hotkeys.append(captured)
+      }
     case let .recording(index):
       state.$hexSettings.withLock {
         // Don't keep duplicate chords
         guard !$0.hotkeys.contains(captured) else { return }
-        if index < $0.hotkeys.count {
-          $0.hotkeys[index] = captured
-        } else {
-          $0.hotkeys.append(captured)
-        }
+        guard $0.hotkeys.indices.contains(index) else { return }
+        $0.hotkeys[index] = captured
       }
     case .pasteLastTranscript:
       guard let key else { return }
@@ -206,17 +218,30 @@ struct SettingsFeature {
       return .none
     }
 
-    let updatedModifiers = keyEvent.modifiers.union(captureModifiers(for: target, state: state))
-    updateCaptureModifiers(updatedModifiers, for: target, state: &state)
-
-    if target == .pasteLastTranscript, keyEvent.key != nil, updatedModifiers.isEmpty {
+    if let key = keyEvent.key {
+      // A key press finalizes the chord. Use only the modifiers held when the
+      // key went down (not accumulated ones), and strip fn: macOS sets the
+      // function flag on F-key events ("fn + top row" is how F-keys are
+      // produced), so keeping it would store Fn+FX instead of FX.
+      var chordModifiers = keyEvent.modifiers.removing(kind: .fn)
+      if target == .pasteLastTranscript, chordModifiers.isEmpty {
+        return .none
+      }
+      // Preserve left/right side information for modifier-only hotkeys by
+      // re-accumulating modifier-only events; for key chords sides don't
+      // matter (erased in applyCapturedHotKey).
+      applyCapturedHotKey(key: key, modifiers: chordModifiers, for: target, state: &state)
+      endCapture(target, state: &state)
       return .none
     }
 
-    if let key = keyEvent.key {
-      applyCapturedHotKey(key: key, modifiers: updatedModifiers, for: target, state: &state)
+    // Modifier-only events accumulate, so multi-modifier chords can be built up.
+    let updatedModifiers = keyEvent.modifiers.union(captureModifiers(for: target, state: state))
+    updateCaptureModifiers(updatedModifiers, for: target, state: &state)
+
+    if case .newRecording = target, keyEvent.modifiers.isEmpty {
+      applyCapturedHotKey(key: nil, modifiers: updatedModifiers, for: target, state: &state)
       endCapture(target, state: &state)
-      return .none
     }
 
     if case .recording = target, keyEvent.modifiers.isEmpty {
@@ -378,10 +403,12 @@ struct SettingsFeature {
         return .none
 
       case .addHotKey:
-        // Append a placeholder and immediately capture a replacement chord.
-        state.$hexSettings.withLock { $0.hotkeys.append(.empty) }
-        state.settingHotKeyIndex = state.hexSettings.hotkeys.count - 1
-        beginCapture(.recording(state.settingHotKeyIndex), state: &state)
+        beginCapture(.newRecording, state: &state)
+        return .none
+
+      case .cancelSettingHotKey:
+        guard state.isSettingHotKey else { return .none }
+        endCapture(.newRecording, state: &state)
         return .none
 
       case let .removeHotKey(index):
@@ -455,7 +482,10 @@ struct SettingsFeature {
         }
 
         guard state.isSettingHotKey else { return .none }
-        return handleCapture(keyEvent, for: .recording(state.settingHotKeyIndex), state: &state)
+        let target: HotKeyCaptureTarget = state.isAddingHotKey
+          ? .newRecording
+          : .recording(state.settingHotKeyIndex)
+        return handleCapture(keyEvent, for: target, state: &state)
 
       case let .toggleOpenOnLogin(enabled):
         state.$hexSettings.withLock { $0.openOnLogin = enabled }
